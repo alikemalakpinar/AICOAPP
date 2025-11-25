@@ -26,8 +26,28 @@ export default function Login() {
   const { login } = useAuth();
   const router = useRouter();
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const handleLogin = async () => {
     if (!email || !password) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -35,8 +55,10 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)/dashboard');
     } catch (error: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Login Failed', error.message);
     } finally {
       setLoading(false);
@@ -45,67 +67,87 @@ export default function Login() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+      <LinearGradient colors={['#0c0d1f', '#1a1c2e', '#0c0d1f']} style={styles.gradient}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
         >
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>AICO</Text>
-            </View>
-            <Text style={styles.welcomeText}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue to AICO</Text>
-          </View>
-
-          <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#6b7280"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#6b7280"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-              onPress={handleLogin}
-              disabled={loading}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Animated.View
+              style={[
+                styles.content,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
             >
-              <Text style={styles.loginButtonText}>
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Text>
-            </TouchableOpacity>
+              <View style={styles.logoContainer}>
+                <View style={styles.logoCircle}>
+                  <LinearGradient
+                    colors={['#3b82f6', '#8b5cf6']}
+                    style={styles.logoGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Text style={styles.logoText}>AICO</Text>
+                  </LinearGradient>
+                </View>
+                <Text style={styles.welcomeText}>Welcome Back</Text>
+                <Text style={styles.subtitle}>Sign in to continue to AICO</Text>
+              </View>
 
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-                <Text style={styles.signupLink}>Sign Up</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              <View style={styles.formContainer}>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail-outline" size={20} color="#6b7280" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    placeholderTextColor="#6b7280"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color="#6b7280" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor="#6b7280"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                  />
+                </View>
+
+                <GradientButton
+                  onPress={handleLogin}
+                  title="Sign In"
+                  loading={loading}
+                  colors={['#3b82f6', '#8b5cf6']}
+                />
+
+                <View style={styles.signupContainer}>
+                  <Text style={styles.signupText}>Don't have an account? </Text>
+                  <TouchableOpacity onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push('/(auth)/signup');
+                  }}>
+                    <Text style={styles.signupLink}>Sign Up</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -115,6 +157,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0c0d1f',
   },
+  gradient: {
+    flex: 1,
+  },
   keyboardView: {
     flex: 1,
   },
@@ -123,26 +168,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
+  content: {
+    width: '100%',
+  },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 48,
   },
   logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#1e40af',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    marginBottom: 24,
+    elevation: 20,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+  },
+  logoGradient: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
   },
   logoText: {
-    fontSize: 32,
+    fontSize: 42,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#ffffff',
     marginBottom: 8,
@@ -158,10 +215,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1c2e',
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
     paddingHorizontal: 16,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#2d3148',
   },
   inputIcon: {
@@ -169,25 +226,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 56,
+    height: 60,
     color: '#ffffff',
     fontSize: 16,
-  },
-  loginButton: {
-    backgroundColor: '#1e40af',
-    borderRadius: 12,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  loginButtonDisabled: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '600',
   },
   signupContainer: {
     flexDirection: 'row',
