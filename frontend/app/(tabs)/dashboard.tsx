@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -30,8 +29,6 @@ interface DashboardStats {
   in_progress_tasks: number;
   completed_tasks: number;
   total_members: number;
-  projects_by_status: any;
-  tasks_by_priority: any;
 }
 
 export default function Dashboard() {
@@ -61,21 +58,29 @@ export default function Dashboard() {
   }, [currentWorkspace]);
 
   const onRefresh = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setRefreshing(true);
     fetchStats();
   }, [currentWorkspace]);
 
+  const handleLogout = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    logout();
+  };
+
   if (!currentWorkspace) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Dashboard</Text>
-        </View>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="briefcase-outline" size={64} color="#6b7280" />
-          <Text style={styles.emptyText}>No workspace selected</Text>
-          <Text style={styles.emptySubtext}>Please select or create a workspace</Text>
-        </View>
+        <LinearGradient colors={['#0c0d1f', '#1a1c2e']} style={styles.gradient}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Dashboard</Text>
+          </View>
+          <EmptyState
+            icon="briefcase-outline"
+            title="No Workspace Selected"
+            subtitle="Please select or create a workspace to get started"
+          />
+        </LinearGradient>
       </SafeAreaView>
     );
   }
@@ -83,121 +88,146 @@ export default function Dashboard() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Dashboard</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b82f6" />
-        </View>
+        <LinearGradient colors={['#0c0d1f', '#1a1c2e']} style={styles.gradient}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Dashboard</Text>
+          </View>
+          <View style={styles.loadingContainer}>
+            <LoadingAnimation />
+            <Text style={styles.loadingText}>Loading analytics...</Text>
+          </View>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
 
-  const taskChartData = [
-    { value: stats?.pending_tasks || 0, label: 'To Do', frontColor: '#f59e0b' },
-    { value: stats?.in_progress_tasks || 0, label: 'Progress', frontColor: '#3b82f6' },
-    { value: stats?.completed_tasks || 0, label: 'Done', frontColor: '#10b981' },
-  ];
-
-  const projectChartData = [
-    { value: stats?.projects_by_status?.not_started || 0, label: 'Not Started', frontColor: '#6b7280' },
-    { value: stats?.projects_by_status?.in_progress || 0, label: 'In Progress', frontColor: '#3b82f6' },
-    { value: stats?.projects_by_status?.completed || 0, label: 'Completed', frontColor: '#10b981' },
-  ];
-
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, {user?.full_name}!</Text>
-          <Text style={styles.workspaceName}>{currentWorkspace.name}</Text>
-        </View>
-        <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-          <Ionicons name="log-out-outline" size={24} color="#ef4444" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />
-        }
-      >
-        <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: '#1e40af' }]}>
-            <Ionicons name="folder-outline" size={32} color="#ffffff" />
-            <Text style={styles.statValue}>{stats?.total_projects || 0}</Text>
-            <Text style={styles.statLabel}>Total Projects</Text>
+      <LinearGradient colors={['#0c0d1f', '#1a1c2e']} style={styles.gradient}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Hello, {user?.full_name}!</Text>
+            <Text style={styles.workspaceName}>{currentWorkspace.name}</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: '#3b82f6' }]}>
-            <Ionicons name="trending-up-outline" size={32} color="#ffffff" />
-            <Text style={styles.statValue}>{stats?.active_projects || 0}</Text>
-            <Text style={styles.statLabel}>Active Projects</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#10b981' }]}>
-            <Ionicons name="checkmark-circle-outline" size={32} color="#ffffff" />
-            <Text style={styles.statValue}>{stats?.completed_tasks || 0}</Text>
-            <Text style={styles.statLabel}>Tasks Done</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#f59e0b' }]}>
-            <Ionicons name="people-outline" size={32} color="#ffffff" />
-            <Text style={styles.statValue}>{stats?.total_members || 0}</Text>
-            <Text style={styles.statLabel}>Team Members</Text>
-          </View>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <LinearGradient
+              colors={['#ef4444', '#dc2626']}
+              style={styles.logoutGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#ffffff" />
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Tasks Overview</Text>
-          <View style={styles.chartContainer}>
-            <BarChart
-              data={taskChartData}
-              width={Dimensions.get('window').width - 80}
-              height={200}
-              barWidth={60}
-              spacing={20}
-              roundedTop
-              xAxisColor="#2d3148"
-              yAxisColor="#2d3148"
-              yAxisTextStyle={{ color: '#9ca3af' }}
-              xAxisLabelTextStyle={{ color: '#9ca3af', fontSize: 12 }}
-              noOfSections={4}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />
+          }
+        >
+          <View style={styles.statsGrid}>
+            <StatsCard
+              icon="folder"
+              value={stats?.total_projects || 0}
+              label="Total Projects"
+              colors={['#3b82f6', '#2563eb']}
+              delay={0}
+            />
+            <StatsCard
+              icon="trending-up"
+              value={stats?.active_projects || 0}
+              label="Active Projects"
+              colors={['#8b5cf6', '#7c3aed']}
+              delay={100}
+            />
+            <StatsCard
+              icon="checkmark-circle"
+              value={stats?.completed_tasks || 0}
+              label="Tasks Done"
+              colors={['#10b981', '#059669']}
+              delay={200}
+            />
+            <StatsCard
+              icon="people"
+              value={stats?.total_members || 0}
+              label="Team Members"
+              colors={['#f59e0b', '#d97706']}
+              delay={300}
             />
           </View>
-          <View style={styles.legendContainer}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#f59e0b' }]} />
-              <Text style={styles.legendText}>{stats?.pending_tasks || 0} To Do</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#3b82f6' }]} />
-              <Text style={styles.legendText}>{stats?.in_progress_tasks || 0} In Progress</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#10b981' }]} />
-              <Text style={styles.legendText}>{stats?.completed_tasks || 0} Done</Text>
-            </View>
-          </View>
-        </View>
 
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Projects Status</Text>
-          <View style={styles.chartContainer}>
-            <BarChart
-              data={projectChartData}
-              width={Dimensions.get('window').width - 80}
-              height={200}
-              barWidth={60}
-              spacing={20}
-              roundedTop
-              xAxisColor="#2d3148"
-              yAxisColor="#2d3148"
-              yAxisTextStyle={{ color: '#9ca3af' }}
-              xAxisLabelTextStyle={{ color: '#9ca3af', fontSize: 12 }}
-              noOfSections={4}
-            />
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Task Overview</Text>
+            <View style={styles.taskCards}>
+              <View style={styles.taskCard}>
+                <LinearGradient
+                  colors={['#f59e0b', '#d97706']}
+                  style={styles.taskGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="time-outline" size={32} color="#ffffff" />
+                  <Text style={styles.taskValue}>{stats?.pending_tasks || 0}</Text>
+                  <Text style={styles.taskLabel}>To Do</Text>
+                </LinearGradient>
+              </View>
+              <View style={styles.taskCard}>
+                <LinearGradient
+                  colors={['#3b82f6', '#2563eb']}
+                  style={styles.taskGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="rocket-outline" size={32} color="#ffffff" />
+                  <Text style={styles.taskValue}>{stats?.in_progress_tasks || 0}</Text>
+                  <Text style={styles.taskLabel}>In Progress</Text>
+                </LinearGradient>
+              </View>
+              <View style={styles.taskCard}>
+                <LinearGradient
+                  colors={['#10b981', '#059669']}
+                  style={styles.taskGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="checkmark-circle-outline" size={32} color="#ffffff" />
+                  <Text style={styles.taskValue}>{stats?.completed_tasks || 0}</Text>
+                  <Text style={styles.taskLabel}>Completed</Text>
+                </LinearGradient>
+              </View>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+
+          <View style={[styles.section, { marginBottom: 32 }]}>
+            <Text style={styles.sectionTitle}>Quick Stats</Text>
+            <View style={styles.quickStats}>
+              <View style={styles.statRow}>
+                <View style={styles.statItem}>
+                  <Ionicons name="pie-chart-outline" size={24} color="#3b82f6" />
+                  <View style={styles.statText}>
+                    <Text style={styles.statLabel}>Completion Rate</Text>
+                    <Text style={styles.statValue}>
+                      {stats?.total_tasks ? Math.round((stats.completed_tasks / stats.total_tasks) * 100) : 0}%
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.statRow}>
+                <View style={styles.statItem}>
+                  <Ionicons name="flash-outline" size={24} color="#8b5cf6" />
+                  <View style={styles.statText}>
+                    <Text style={styles.statLabel}>Active Workload</Text>
+                    <Text style={styles.statValue}>{stats?.in_progress_tasks || 0} tasks</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -207,16 +237,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0c0d1f',
   },
+  gradient: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2d3148',
+    padding: 20,
+    paddingTop: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#ffffff',
   },
@@ -225,13 +257,17 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
   },
   workspaceName: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
     marginTop: 4,
   },
   logoutButton: {
-    padding: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  logoutGradient: {
+    padding: 12,
   },
   scrollView: {
     flex: 1,
@@ -242,84 +278,77 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  statCard: {
-    flex: 1,
-    minWidth: '47%',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
+  section: {
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
-  statValue: {
-    fontSize: 32,
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginTop: 12,
+    marginBottom: 16,
   },
-  statLabel: {
-    fontSize: 14,
+  taskCards: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  taskCard: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  taskGradient: {
+    padding: 16,
+    alignItems: 'center',
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  taskValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 8,
+  },
+  taskLabel: {
+    fontSize: 12,
     color: '#ffffff',
     marginTop: 4,
     opacity: 0.9,
   },
-  chartCard: {
+  quickStats: {
     backgroundColor: '#1a1c2e',
     borderRadius: 16,
     padding: 20,
-    marginHorizontal: 16,
+  },
+  statRow: {
     marginBottom: 16,
   },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 16,
-  },
-  chartContainer: {
-    alignItems: 'center',
-  },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#2d3148',
-  },
-  legendItem: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    marginRight: 8,
+  statText: {
+    marginLeft: 16,
+    flex: 1,
   },
-  legendText: {
+  statLabel: {
     fontSize: 14,
     color: '#9ca3af',
+    marginBottom: 4,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
+  statValue: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 16,
-    color: '#9ca3af',
-    marginTop: 8,
-    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    color: '#9ca3af',
+    marginTop: 16,
+    fontSize: 16,
   },
 });
