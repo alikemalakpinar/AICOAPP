@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
   TextInput,
   Alert,
   Modal,
@@ -15,7 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import { format } from 'date-fns';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ProjectCard } from '../../components/ProjectCard';
+import { EmptyState } from '../../components/EmptyState';
+import { LoadingAnimation } from '../../components/LoadingAnimation';
+import { GradientButton } from '../../components/GradientButton';
+import * as Haptics from 'expo-haptics';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
 
