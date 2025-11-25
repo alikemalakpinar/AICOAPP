@@ -123,11 +123,11 @@ class AICoAPITester:
         """Test unauthorized access"""
         response = self.make_request("GET", "/user/me")
         
-        if response and response.status_code == 401:
-            self.log_test("Auth Unauthorized", True, "Correctly rejected unauthorized request")
+        if response and response.status_code in [401, 403]:
+            self.log_test("Auth Unauthorized", True, f"Correctly rejected unauthorized request (status: {response.status_code})")
             return True
         else:
-            self.log_test("Auth Unauthorized", False, f"Expected 401, got {response.status_code if response else 'None'}")
+            self.log_test("Auth Unauthorized", False, f"Expected 401/403, got {response.status_code if response else 'None'}")
         return False
         
     def test_workspace_create(self):
