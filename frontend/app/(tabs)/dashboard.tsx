@@ -7,14 +7,17 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import { BarChart } from 'react-native-gifted-charts';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatsCard } from '../../components/StatsCard';
+import { EmptyState } from '../../components/EmptyState';
+import { LoadingAnimation } from '../../components/LoadingAnimation';
+import * as Haptics from 'expo-haptics';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
 
