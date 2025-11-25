@@ -1,0 +1,99 @@
+============================================================
+AICO Backend API Testing Suite
+============================================================
+Testing backend at: https://dualslack.preview.emergentagent.com/api
+
+🔐 AUTHENTICATION TESTS
+------------------------------
+❌ FAIL: Auth Unauthorized
+   Details: Expected 401/403, got None
+❌ FAIL: Auth Signup
+   Details: Status: None, Error: No response
+✅ PASS: Auth Login
+   Details: Login successful
+✅ PASS: Auth Get Me
+   Details: User data retrieved: john.doe@aico.com
+
+🏢 WORKSPACE TESTS
+------------------------------
+✅ PASS: Workspace Create
+   Details: Workspace created with ID: 6925ae64eb044133b5a563c8
+✅ PASS: Workspace List
+   Details: Retrieved 3 workspaces
+✅ PASS: Workspace Get
+   Details: Retrieved workspace: AICO Development Team
+✅ PASS: Workspace Update
+   Details: Workspace updated successfully
+❌ FAIL: Workspace Invite
+   Details: Failed to create user to invite
+
+📋 PROJECT TESTS
+------------------------------
+❌ FAIL: Project Create
+   Details: Status: None, Error: No response
+❌ FAIL: Project List
+   Details: No projects returned
+❌ FAIL: Project Get
+   Details: No project ID available
+❌ FAIL: Project Update
+   Details: No project ID available
+
+✅ TASK TESTS
+------------------------------
+❌ FAIL: Task Create
+   Details: No project ID available
+❌ FAIL: Task List
+   Details: No project ID available
+❌ FAIL: Task Update
+   Details: No task ID available
+
+👥 TEAM TESTS
+------------------------------
+✅ PASS: Team Get
+   Details: Retrieved 1 team members
+
+📊 ANALYTICS TESTS
+------------------------------
+✅ PASS: Analytics Dashboard
+   Details: Analytics data retrieved with all expected fields
+
+🗑️ CLEANUP TESTS
+------------------------------
+❌ FAIL: Task Delete
+   Details: No task ID available
+❌ FAIL: Project Delete
+   Details: No project ID available
+
+============================================================
+TEST SUMMARY
+============================================================
+Total Tests: 20
+Passed: 8
+Failed: 12
+Success Rate: 40.0%
+
+FAILED TESTS:
+--------------------
+❌ Auth Unauthorized: Expected 401/403, got None
+❌ Auth Signup: Status: None, Error: No response
+❌ Workspace Invite: Failed to create user to invite
+❌ Project Create: Status: None, Error: No response
+❌ Project List: No projects returned
+❌ Project Get: No project ID available
+❌ Project Update: No project ID available
+❌ Task Create: No project ID available
+❌ Task List: No project ID available
+❌ Task Update: No task ID available
+❌ Task Delete: No task ID available
+❌ Project Delete: No project ID available
+
+PASSED TESTS:
+--------------------
+✅ Auth Login
+✅ Auth Get Me
+✅ Workspace Create
+✅ Workspace List
+✅ Workspace Get
+✅ Workspace Update
+✅ Team Get
+✅ Analytics Dashboard
