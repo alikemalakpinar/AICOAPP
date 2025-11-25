@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,15 @@ import {
   Platform,
   ScrollView,
   Alert,
-  Image,
+  Animated,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { GradientButton } from '../../components/GradientButton';
+import * as Haptics from 'expo-haptics';
 
 export default function Login() {
   const [email, setEmail] = useState('');
