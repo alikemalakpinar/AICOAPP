@@ -64,10 +64,12 @@ class AICoAPITester:
         
     def test_auth_signup(self):
         """Test user signup"""
+        import time
+        timestamp = int(time.time())
         test_user = {
-            "email": "john.doe@aico.com",
+            "email": f"testuser{timestamp}@aico.com",
             "password": "SecurePass123!",
-            "full_name": "John Doe"
+            "full_name": "Test User"
         }
         
         response = self.make_request("POST", "/auth/signup", test_user)
