@@ -106,19 +106,38 @@ export default function Dashboard() {
       <LinearGradient colors={['#0c0d1f', '#1a1c2e']} style={styles.gradient}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Hello, {user?.full_name}!</Text>
+            <Text style={styles.greeting}>Merhaba, {user?.full_name}!</Text>
             <Text style={styles.workspaceName}>{currentWorkspace.name}</Text>
           </View>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <LinearGradient
-              colors={['#ef4444', '#dc2626']}
-              style={styles.logoutGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/search');
+              }}
+              style={styles.iconButton}
             >
-              <Ionicons name="log-out-outline" size={20} color="#ffffff" />
-            </LinearGradient>
-          </TouchableOpacity>
+              <Ionicons name="search" size={22} color="#111827" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/notifications');
+              }}
+              style={styles.iconButton}
+            >
+              <Ionicons name="notifications" size={22} color="#111827" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/timetracking');
+              }}
+              style={styles.iconButton}
+            >
+              <Ionicons name="time" size={22} color="#111827" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView
