@@ -152,11 +152,11 @@ export default function ProjectDetail() {
             }}
             style={styles.backButton}
           >
-            <Ionicons name=\"arrow-back\" size={24} color=\"#111827\" />
+            <Ionicons name="arrow-back" size={24} color="#111827" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Proje Detayları</Text>
           <TouchableOpacity style={styles.moreButton}>
-            <Ionicons name=\"ellipsis-vertical\" size={24} color=\"#111827\" />
+            <Ionicons name="ellipsis-vertical" size={24} color="#111827" />
           </TouchableOpacity>
         </View>
 
