@@ -98,6 +98,39 @@ class FileUpload(BaseModel):
     task_id: Optional[str] = None
     workspace_id: str
 
+class RecurringTaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    project_id: str
+    frequency: str  # daily, weekly, monthly
+    priority: str = "medium"
+    assigned_to: Optional[str] = None
+
+class BudgetCreate(BaseModel):
+    project_id: str
+    amount: float
+    currency: str = "TRY"
+    description: Optional[str] = None
+
+class ExpenseCreate(BaseModel):
+    project_id: str
+    amount: float
+    description: str
+    category: str
+    date: datetime
+
+class ClientCreate(BaseModel):
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    company: Optional[str] = None
+    workspace_id: str
+
+class UserSettings(BaseModel):
+    theme: str = "light"
+    language: str = "tr"
+    notifications_enabled: bool = True
+
 # ==================== AUTH UTILS ====================
 
 def verify_password(plain_password, hashed_password):
