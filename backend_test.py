@@ -447,10 +447,12 @@ class AICoAPITester:
             return False
             
         # First create another user to invite
+        import time
+        timestamp = int(time.time())
         invite_user = {
-            "email": "jane.smith@aico.com",
+            "email": f"inviteuser{timestamp}@aico.com",
             "password": "SecurePass456!",
-            "full_name": "Jane Smith"
+            "full_name": "Invite User"
         }
         
         response = self.make_request("POST", "/auth/signup", invite_user)
