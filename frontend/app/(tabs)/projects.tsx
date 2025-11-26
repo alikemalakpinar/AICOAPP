@@ -36,6 +36,7 @@ interface Project {
 
 export default function Projects() {
   const { currentWorkspace } = useWorkspaceStore();
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
