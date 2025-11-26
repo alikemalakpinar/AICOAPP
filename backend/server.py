@@ -405,6 +405,104 @@ async def get_dashboard_stats(workspace_id: str, current_user: dict = Depends(ge
         }
     }
 
+# ==================== REQUEST/ORDER ROUTES ====================
+
+@api_router.post("/requests")
+async def create_request(request: RequestCreate, current_user: dict = Depends(get_current_user)):
+    workspace = await db.workspaces.find_one({"_id": ObjectId(request.workspace_id)})
+    if not workspace or current_user["_id"] not in workspace["member_ids"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    request_dict = {
+        "title": request.title,
+        "description": request.description,
+        "workspace_id": request.workspace_id,
+        "priority": request.priority,
+        "category": request.category,
+        "deadline": request.deadline,
+        "status": "pending",
+        "created_by": current_user["_id"],
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    result = await db.requests.insert_one(request_dict)
+    request_dict["_id"] = str(result.inserted_id)
+    return request_dict
+
+@api_router.get("/requests")
+async def get_requests(workspace_id: str, current_user: dict = Depends(get_current_user)):
+    workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
+    if not workspace or current_user["_id"] not in workspace["member_ids"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    requests = await db.requests.find({"workspace_id": workspace_id}).to_list(1000)
+    for r in requests:
+        r["_id"] = str(r["_id"])
+    return requests
+
+@api_router.put("/requests/{request_id}")
+async def update_request(request_id: str, request: RequestCreate, current_user: dict = Depends(get_current_user)):
+    update_dict = {
+        "title": request.title,
+        "description": request.description,
+        "priority": request.priority,
+        "category": request.category,
+        "deadline": request.deadline,
+        "updated_at": datetime.utcnow()
+    }
+    result = await db.requests.update_one({"_id": ObjectId(request_id)}, {"$set": update_dict})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return {"message": "Request updated"}
+
+# ==================== NOTIFICATION ROUTES ====================
+
+@api_router.get("/notifications")
+async def get_notifications(current_user: dict = Depends(get_current_user)):
+    notifications = await db.notifications.find({"user_id": current_user["_id"]}).sort("created_at", -1).to_list(100)
+    for n in notifications:
+        n["_id"] = str(n["_id"])
+    return notifications
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.notifications.update_one(
+        {"_id": ObjectId(notification_id), "user_id": current_user["_id"]},
+        {"$set": {"read": True}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {"message": "Notification marked as read"}
+
+# ==================== COMMENT ROUTES ====================
+
+@api_router.post("/comments")
+async def create_comment(comment: CommentCreate, current_user: dict = Depends(get_current_user)):
+    comment_dict = {
+        "content": comment.content,
+        "task_id": comment.task_id,
+        "project_id": comment.project_id,
+        "user_id": current_user["_id"],
+        "user_name": current_user["full_name"],
+        "created_at": datetime.utcnow()
+    }
+    result = await db.comments.insert_one(comment_dict)
+    comment_dict["_id"] = str(result.inserted_id)
+    return comment_dict
+
+@api_router.get("/comments")
+async def get_comments(task_id: Optional[str] = None, project_id: Optional[str] = None):
+    query = {}
+    if task_id:
+        query["task_id"] = task_id
+    if project_id:
+        query["project_id"] = project_id
+    
+    comments = await db.comments.find(query).sort("created_at", -1).to_list(1000)
+    for c in comments:
+        c["_id"] = str(c["_id"])
+    return comments
+
 app.include_router(api_router)
 
 app.add_middleware(
