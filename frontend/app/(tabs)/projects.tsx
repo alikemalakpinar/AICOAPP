@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ProjectCard } from '../../components/ProjectCard';
 import { EmptyState } from '../../components/EmptyState';
