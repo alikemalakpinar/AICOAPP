@@ -89,6 +89,7 @@ class AICoAPITester:
         
     def test_auth_login(self):
         """Test user login"""
+        # Use existing user from previous successful login
         login_data = {
             "email": "john.doe@aico.com",
             "password": "SecurePass123!"
