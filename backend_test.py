@@ -20,6 +20,10 @@ class AICoAPITester:
         self.workspace_id = None
         self.project_id = None
         self.task_id = None
+        self.request_id = None
+        self.time_entry_id = None
+        self.file_id = None
+        self.comment_id = None
         self.test_results = []
         
     def log_test(self, test_name, success, details=""):
