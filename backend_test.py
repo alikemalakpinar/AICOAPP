@@ -461,7 +461,7 @@ class AICoAPITester:
             return False
             
         # Now invite the user
-        invite_data = {"email": "jane.smith@aico.com"}
+        invite_data = {"email": f"inviteuser{timestamp}@aico.com"}
         headers = self.get_auth_headers()
         response = self.make_request("POST", f"/workspaces/{self.workspace_id}/invite", invite_data, headers)
         
