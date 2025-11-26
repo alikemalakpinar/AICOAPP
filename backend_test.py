@@ -840,6 +840,44 @@ class AICoAPITester:
         self.test_task_update()
         print()
         
+        # Request Tests
+        print("📝 REQUEST TESTS")
+        print("-" * 30)
+        self.test_request_create()
+        self.test_request_list()
+        self.test_request_update()
+        print()
+        
+        # Time Tracking Tests
+        print("⏰ TIME TRACKING TESTS")
+        print("-" * 30)
+        self.test_time_entry_create()
+        self.test_time_entry_list()
+        self.test_time_entry_active()
+        self.test_time_entry_checkout()
+        print()
+        
+        # File Tests
+        print("📁 FILE TESTS")
+        print("-" * 30)
+        self.test_file_upload()
+        self.test_file_list()
+        self.test_file_delete()
+        print()
+        
+        # Comment Tests
+        print("💬 COMMENT TESTS")
+        print("-" * 30)
+        self.test_comment_create()
+        self.test_comment_list()
+        print()
+        
+        # Search Tests
+        print("🔍 SEARCH TESTS")
+        print("-" * 30)
+        self.test_search()
+        print()
+        
         # Team Tests
         print("👥 TEAM TESTS")
         print("-" * 30)
@@ -850,6 +888,12 @@ class AICoAPITester:
         print("📊 ANALYTICS TESTS")
         print("-" * 30)
         self.test_analytics_dashboard()
+        print()
+        
+        # Notification Tests
+        print("🔔 NOTIFICATION TESTS")
+        print("-" * 30)
+        self.test_notifications_list()
         print()
         
         # Cleanup Tests
