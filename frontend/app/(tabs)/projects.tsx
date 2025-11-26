@@ -159,31 +159,16 @@ export default function Projects() {
           </View>
         ) : (
           <View style={styles.projectsContainer}>
-            {projects.map((project) => (
-              <View key={project._id} style={styles.projectCard}>
-                <View style={styles.projectHeader}>
-                  <Text style={styles.projectName}>{project.name}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(project.status) }]}>
-                    <Text style={styles.statusText}>{getStatusLabel(project.status)}</Text>
-                  </View>
-                </View>
-                {project.description && (
-                  <Text style={styles.projectDescription} numberOfLines={2}>
-                    {project.description}
-                  </Text>
-                )}
-                <View style={styles.projectFooter}>
-                  <View style={styles.projectInfo}>
-                    <Ionicons name="calendar-outline" size={16} color="#9ca3af" />
-                    <Text style={styles.projectDate}>
-                      {format(new Date(project.created_at), 'MMM dd, yyyy')}
-                    </Text>
-                  </View>
-                  <TouchableOpacity style={styles.projectAction}>
-                    <Ionicons name="arrow-forward" size={20} color="#3b82f6" />
-                  </TouchableOpacity>
-                </View>
-              </View>
+            {projects.map((project, index) => (
+              <ProjectCard
+                key={project._id}
+                project={project}
+                delay={index * 100}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push(`/project/${project._id}`);
+                }}
+              />
             ))}
           </View>
         )}
