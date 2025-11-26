@@ -66,6 +66,25 @@ class TaskCreate(BaseModel):
 class InviteMember(BaseModel):
     email: EmailStr
 
+class RequestCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    workspace_id: str
+    priority: str = "medium"
+    category: str = "general"
+    deadline: Optional[datetime] = None
+
+class CommentCreate(BaseModel):
+    content: str
+    task_id: Optional[str] = None
+    project_id: Optional[str] = None
+
+class NotificationCreate(BaseModel):
+    user_id: str
+    title: str
+    message: str
+    type: str = "info"
+
 # ==================== AUTH UTILS ====================
 
 def verify_password(plain_password, hashed_password):
