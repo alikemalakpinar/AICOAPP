@@ -85,6 +85,19 @@ class NotificationCreate(BaseModel):
     message: str
     type: str = "info"
 
+class TimeEntry(BaseModel):
+    workspace_id: str
+    check_in: datetime
+    check_out: Optional[datetime] = None
+    note: Optional[str] = None
+
+class FileUpload(BaseModel):
+    name: str
+    file_data: str  # base64
+    project_id: Optional[str] = None
+    task_id: Optional[str] = None
+    workspace_id: str
+
 # ==================== AUTH UTILS ====================
 
 def verify_password(plain_password, hashed_password):
