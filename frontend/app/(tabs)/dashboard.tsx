@@ -278,17 +278,22 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
   },
   workspaceName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#ffffff',
     marginTop: 4,
   },
-  logoutButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  logoutGradient: {
-    padding: 12,
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
