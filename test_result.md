@@ -518,9 +518,13 @@ frontend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "2.0"
+  test_sequence: 2
   run_ui: false
+  comprehensive_test_completed: true
+  total_endpoints_tested: 37
+  success_rate: "97.1%"
+  test_date: "2025-11-26"
 
 test_plan:
   current_focus:
