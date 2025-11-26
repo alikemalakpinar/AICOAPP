@@ -35,6 +35,7 @@ interface DashboardStats {
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { currentWorkspace } = useWorkspaceStore();
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
