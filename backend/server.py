@@ -516,6 +516,142 @@ async def get_comments(task_id: Optional[str] = None, project_id: Optional[str] 
         c["_id"] = str(c["_id"])
     return comments
 
+# ==================== TIME TRACKING ROUTES ====================
+
+@api_router.post("/time-entries")
+async def create_time_entry(entry: TimeEntry, current_user: dict = Depends(get_current_user)):
+    entry_dict = {
+        "user_id": current_user["_id"],
+        "workspace_id": entry.workspace_id,
+        "check_in": entry.check_in,
+        "check_out": entry.check_out,
+        "note": entry.note,
+        "created_at": datetime.utcnow()
+    }
+    result = await db.time_entries.insert_one(entry_dict)
+    entry_dict["_id"] = str(result.inserted_id)
+    return entry_dict
+
+@api_router.get("/time-entries")
+async def get_time_entries(workspace_id: str, current_user: dict = Depends(get_current_user)):
+    entries = await db.time_entries.find({
+        "workspace_id": workspace_id,
+        "user_id": current_user["_id"]
+    }).sort("created_at", -1).to_list(100)
+    for e in entries:
+        e["_id"] = str(e["_id"])
+    return entries
+
+@api_router.put("/time-entries/{entry_id}/checkout")
+async def checkout_time_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.time_entries.update_one(
+        {"_id": ObjectId(entry_id), "user_id": current_user["_id"]},
+        {"$set": {"check_out": datetime.utcnow()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Time entry not found")
+    return {"message": "Checked out"}
+
+@api_router.get("/time-entries/active")
+async def get_active_time_entry(current_user: dict = Depends(get_current_user)):
+    entry = await db.time_entries.find_one({
+        "user_id": current_user["_id"],
+        "check_out": None
+    })
+    if entry:
+        entry["_id"] = str(entry["_id"])
+    return entry
+
+# ==================== FILE UPLOAD ROUTES ====================
+
+@api_router.post("/files")
+async def upload_file(file: FileUpload, current_user: dict = Depends(get_current_user)):
+    file_dict = {
+        "name": file.name,
+        "file_data": file.file_data,
+        "project_id": file.project_id,
+        "task_id": file.task_id,
+        "workspace_id": file.workspace_id,
+        "uploaded_by": current_user["_id"],
+        "created_at": datetime.utcnow()
+    }
+    result = await db.files.insert_one(file_dict)
+    file_dict["_id"] = str(result.inserted_id)
+    return file_dict
+
+@api_router.get("/files")
+async def get_files(
+    workspace_id: str,
+    project_id: Optional[str] = None,
+    task_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    query = {"workspace_id": workspace_id}
+    if project_id:
+        query["project_id"] = project_id
+    if task_id:
+        query["task_id"] = task_id
+    
+    files = await db.files.find(query).sort("created_at", -1).to_list(1000)
+    for f in files:
+        f["_id"] = str(f["_id"])
+    return files
+
+@api_router.delete("/files/{file_id}")
+async def delete_file(file_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.files.delete_one({"_id": ObjectId(file_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"message": "File deleted"}
+
+# ==================== SEARCH ROUTES ====================
+
+@api_router.get("/search")
+async def search(
+    q: str,
+    workspace_id: str,
+    type: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    results = {"projects": [], "tasks": [], "requests": []}
+    
+    if not type or type == "projects":
+        projects = await db.projects.find({
+            "workspace_id": workspace_id,
+            "$or": [
+                {"name": {"$regex": q, "$options": "i"}},
+                {"description": {"$regex": q, "$options": "i"}}
+            ]
+        }).to_list(50)
+        for p in projects:
+            p["_id"] = str(p["_id"])
+        results["projects"] = projects
+    
+    if not type or type == "tasks":
+        tasks = await db.tasks.find({
+            "$or": [
+                {"title": {"$regex": q, "$options": "i"}},
+                {"description": {"$regex": q, "$options": "i"}}
+            ]
+        }).to_list(50)
+        for t in tasks:
+            t["_id"] = str(t["_id"])
+        results["tasks"] = tasks
+    
+    if not type or type == "requests":
+        requests = await db.requests.find({
+            "workspace_id": workspace_id,
+            "$or": [
+                {"title": {"$regex": q, "$options": "i"}},
+                {"description": {"$regex": q, "$options": "i"}}
+            ]
+        }).to_list(50)
+        for r in requests:
+            r["_id"] = str(r["_id"])
+        results["requests"] = r
+    
+    return results
+
 app.include_router(api_router)
 
 app.add_middleware(
