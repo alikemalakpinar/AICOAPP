@@ -345,6 +345,174 @@ backend:
           agent: "testing"
           comment: "✅ Analytics dashboard endpoint working correctly. Returns comprehensive statistics including project counts by status, task counts by status and priority, and team member count."
 
+  - task: "Request Management - Create Request"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Request creation endpoint working correctly. Creates requests within workspaces with title, description, priority, category, and deadline."
+
+  - task: "Request Management - List Requests"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Request listing endpoint working correctly. Returns requests filtered by workspace_id with proper access control."
+
+  - task: "Request Management - Update Request"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Request update endpoint working correctly. Updates request details including title, description, priority, and category."
+
+  - task: "Time Tracking - Create Time Entry"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Time entry creation endpoint working correctly. Creates time entries with workspace_id, check_in time, and optional notes."
+
+  - task: "Time Tracking - List Time Entries"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Time entry listing endpoint working correctly. Returns time entries filtered by workspace_id and user_id."
+
+  - task: "Time Tracking - Get Active Time Entry"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Active time entry endpoint working correctly. Returns current active time entry for the user."
+
+  - task: "Time Tracking - Checkout Time Entry"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Time entry checkout endpoint working correctly. Updates time entry with check_out timestamp."
+
+  - task: "File Management - Upload File"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ File upload endpoint working correctly. Uploads files with base64 data, associates with workspace/project/task."
+
+  - task: "File Management - List Files"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ File listing endpoint working correctly. Returns files filtered by workspace_id, project_id, or task_id."
+
+  - task: "File Management - Delete File"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ File deletion endpoint working correctly. Removes files from database with proper access control."
+
+  - task: "Comment Management - Create Comment"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Comment creation endpoint working correctly. Creates comments associated with tasks or projects."
+
+  - task: "Comment Management - List Comments"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Comment listing endpoint working correctly. Returns comments filtered by task_id or project_id."
+
+  - task: "Search Functionality"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Search endpoint working correctly. Searches across projects, tasks, and requests with regex matching on titles and descriptions."
+
+  - task: "Notification Management - List Notifications"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Notification listing endpoint working correctly. Returns user-specific notifications sorted by creation date."
+
 frontend:
   # Frontend testing not performed as per testing agent instructions
 
