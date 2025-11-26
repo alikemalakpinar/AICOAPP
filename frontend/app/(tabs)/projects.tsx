@@ -168,7 +168,10 @@ export default function Projects() {
                 delay={index * 100}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(`/project/${project._id}`);
+                  router.push({
+                    pathname: '/project-detail',
+                    params: { id: project._id }
+                  });
                 }}
               />
             ))}
