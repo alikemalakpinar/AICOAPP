@@ -639,16 +639,16 @@ async def search(
         results["tasks"] = tasks
     
     if not type or type == "requests":
-        requests = await db.requests.find({
+        requests_list = await db.requests.find({
             "workspace_id": workspace_id,
             "$or": [
                 {"title": {"$regex": q, "$options": "i"}},
                 {"description": {"$regex": q, "$options": "i"}}
             ]
         }).to_list(50)
-        for r in requests:
+        for r in requests_list:
             r["_id"] = str(r["_id"])
-        results["requests"] = r
+        results["requests"] = requests_list
     
     return results
 
