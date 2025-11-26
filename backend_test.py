@@ -502,6 +502,300 @@ class AICoAPITester:
             self.log_test("Project Delete", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
         return False
         
+    def test_request_create(self):
+        """Test request creation"""
+        if not self.workspace_id:
+            self.log_test("Request Create", False, "No workspace ID available")
+            return False
+            
+        request_data = {
+            "title": "AICO Feature Request",
+            "description": "Request for new feature in AICO system",
+            "workspace_id": self.workspace_id,
+            "priority": "high",
+            "category": "feature"
+        }
+        
+        headers = self.get_auth_headers()
+        response = self.make_request("POST", "/requests", request_data, headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if "_id" in data:
+                self.request_id = data["_id"]
+                self.log_test("Request Create", True, f"Request created with ID: {self.request_id}")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Request Create", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_request_list(self):
+        """Test request listing"""
+        if not self.workspace_id:
+            self.log_test("Request List", False, "No workspace ID available")
+            return False
+            
+        headers = self.get_auth_headers()
+        response = self.make_request("GET", f"/requests?workspace_id={self.workspace_id}", headers=headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                self.log_test("Request List", True, f"Retrieved {len(data)} requests")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Request List", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_request_update(self):
+        """Test request update"""
+        if not self.request_id:
+            self.log_test("Request Update", False, "No request ID available")
+            return False
+            
+        update_data = {
+            "title": "AICO Feature Request - Updated",
+            "description": "Updated request description",
+            "workspace_id": self.workspace_id,
+            "priority": "medium",
+            "category": "enhancement"
+        }
+        
+        headers = self.get_auth_headers()
+        response = self.make_request("PUT", f"/requests/{self.request_id}", update_data, headers)
+        
+        if response and response.status_code == 200:
+            self.log_test("Request Update", True, "Request updated successfully")
+            return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Request Update", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_notifications_list(self):
+        """Test notifications listing"""
+        headers = self.get_auth_headers()
+        response = self.make_request("GET", "/notifications", headers=headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                self.log_test("Notifications List", True, f"Retrieved {len(data)} notifications")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Notifications List", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_comment_create(self):
+        """Test comment creation"""
+        if not self.task_id:
+            self.log_test("Comment Create", False, "No task ID available")
+            return False
+            
+        comment_data = {
+            "content": "This is a test comment for the task",
+            "task_id": self.task_id
+        }
+        
+        headers = self.get_auth_headers()
+        response = self.make_request("POST", "/comments", comment_data, headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if "_id" in data:
+                self.comment_id = data["_id"]
+                self.log_test("Comment Create", True, f"Comment created with ID: {self.comment_id}")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Comment Create", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_comment_list(self):
+        """Test comment listing"""
+        if not self.task_id:
+            self.log_test("Comment List", False, "No task ID available")
+            return False
+            
+        headers = self.get_auth_headers()
+        response = self.make_request("GET", f"/comments?task_id={self.task_id}", headers=headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                self.log_test("Comment List", True, f"Retrieved {len(data)} comments")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Comment List", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_time_entry_create(self):
+        """Test time entry creation"""
+        if not self.workspace_id:
+            self.log_test("Time Entry Create", False, "No workspace ID available")
+            return False
+            
+        time_data = {
+            "workspace_id": self.workspace_id,
+            "check_in": datetime.utcnow().isoformat(),
+            "note": "Working on AICO development tasks"
+        }
+        
+        headers = self.get_auth_headers()
+        response = self.make_request("POST", "/time-entries", time_data, headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if "_id" in data:
+                self.time_entry_id = data["_id"]
+                self.log_test("Time Entry Create", True, f"Time entry created with ID: {self.time_entry_id}")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Time Entry Create", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_time_entry_list(self):
+        """Test time entry listing"""
+        if not self.workspace_id:
+            self.log_test("Time Entry List", False, "No workspace ID available")
+            return False
+            
+        headers = self.get_auth_headers()
+        response = self.make_request("GET", f"/time-entries?workspace_id={self.workspace_id}", headers=headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                self.log_test("Time Entry List", True, f"Retrieved {len(data)} time entries")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Time Entry List", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_time_entry_active(self):
+        """Test active time entry"""
+        headers = self.get_auth_headers()
+        response = self.make_request("GET", "/time-entries/active", headers=headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            self.log_test("Time Entry Active", True, f"Active time entry check successful")
+            return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Time Entry Active", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_time_entry_checkout(self):
+        """Test time entry checkout"""
+        if not self.time_entry_id:
+            self.log_test("Time Entry Checkout", False, "No time entry ID available")
+            return False
+            
+        headers = self.get_auth_headers()
+        response = self.make_request("PUT", f"/time-entries/{self.time_entry_id}/checkout", headers=headers)
+        
+        if response and response.status_code == 200:
+            self.log_test("Time Entry Checkout", True, "Time entry checked out successfully")
+            return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Time Entry Checkout", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_file_upload(self):
+        """Test file upload"""
+        if not self.workspace_id:
+            self.log_test("File Upload", False, "No workspace ID available")
+            return False
+            
+        import base64
+        test_content = "This is a test file for AICO system"
+        file_data = base64.b64encode(test_content.encode()).decode()
+        
+        file_upload_data = {
+            "name": "test_document.txt",
+            "file_data": file_data,
+            "workspace_id": self.workspace_id,
+            "project_id": self.project_id
+        }
+        
+        headers = self.get_auth_headers()
+        response = self.make_request("POST", "/files", file_upload_data, headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if "_id" in data:
+                self.file_id = data["_id"]
+                self.log_test("File Upload", True, f"File uploaded with ID: {self.file_id}")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("File Upload", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_file_list(self):
+        """Test file listing"""
+        if not self.workspace_id:
+            self.log_test("File List", False, "No workspace ID available")
+            return False
+            
+        headers = self.get_auth_headers()
+        response = self.make_request("GET", f"/files?workspace_id={self.workspace_id}", headers=headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                self.log_test("File List", True, f"Retrieved {len(data)} files")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("File List", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_file_delete(self):
+        """Test file deletion"""
+        if not self.file_id:
+            self.log_test("File Delete", False, "No file ID available")
+            return False
+            
+        headers = self.get_auth_headers()
+        response = self.make_request("DELETE", f"/files/{self.file_id}", headers=headers)
+        
+        if response and response.status_code == 200:
+            self.log_test("File Delete", True, "File deleted successfully")
+            return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("File Delete", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
+    def test_search(self):
+        """Test search functionality"""
+        if not self.workspace_id:
+            self.log_test("Search", False, "No workspace ID available")
+            return False
+            
+        headers = self.get_auth_headers()
+        response = self.make_request("GET", f"/search?q=AICO&workspace_id={self.workspace_id}", headers=headers)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if "projects" in data and "tasks" in data and "requests" in data:
+                total_results = len(data["projects"]) + len(data["tasks"]) + len(data["requests"])
+                self.log_test("Search", True, f"Search completed, found {total_results} total results")
+                return True
+        
+        error_msg = response.json().get("detail", "Unknown error") if response else "No response"
+        self.log_test("Search", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        return False
+        
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("=" * 60)
