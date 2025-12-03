@@ -210,6 +210,37 @@ async def login(user_data: UserLogin):
 async def get_me(current_user: dict = Depends(get_current_user)):
     return current_user
 
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    avatar: Optional[str] = None
+
+@api_router.put("/user/me")
+async def update_me(user_update: UserUpdate, current_user: dict = Depends(get_current_user)):
+    update_dict = {}
+    if user_update.full_name:
+        update_dict["full_name"] = user_update.full_name
+    if user_update.email:
+        # Check if email is already taken by another user
+        existing = await db.users.find_one({"email": user_update.email, "_id": {"$ne": ObjectId(current_user["_id"])}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        update_dict["email"] = user_update.email
+    if user_update.avatar:
+        update_dict["avatar"] = user_update.avatar
+
+    if update_dict:
+        await db.users.update_one(
+            {"_id": ObjectId(current_user["_id"])},
+            {"$set": update_dict}
+        )
+
+    # Return updated user
+    user = await db.users.find_one({"_id": ObjectId(current_user["_id"])})
+    user["_id"] = str(user["_id"])
+    user.pop("password", None)
+    return user
+
 # ==================== WORKSPACE ROUTES ====================
 
 @api_router.post("/workspaces")
@@ -500,6 +531,31 @@ async def update_request(request_id: str, request: RequestCreate, current_user: 
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Request not found")
     return {"message": "Request updated"}
+
+@api_router.delete("/requests/{request_id}")
+async def delete_request(request_id: str, current_user: dict = Depends(get_current_user)):
+    request = await db.requests.find_one({"_id": ObjectId(request_id)})
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if request["created_by"] != current_user["_id"]:
+        raise HTTPException(status_code=403, detail="Only creator can delete")
+    result = await db.requests.delete_one({"_id": ObjectId(request_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return {"message": "Request deleted"}
+
+class RequestStatusUpdate(BaseModel):
+    status: str
+
+@api_router.put("/requests/{request_id}/status")
+async def update_request_status(request_id: str, status_update: RequestStatusUpdate, current_user: dict = Depends(get_current_user)):
+    result = await db.requests.update_one(
+        {"_id": ObjectId(request_id)},
+        {"$set": {"status": status_update.status, "updated_at": datetime.utcnow()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return {"message": "Request status updated"}
 
 # ==================== NOTIFICATION ROUTES ====================
 

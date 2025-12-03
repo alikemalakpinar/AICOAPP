@@ -73,8 +73,7 @@ export default function Dashboard() {
       }),
       Animated.spring(slideAnim, {
         toValue: 0,
-        friction: 8,
-        tension: 40,
+        ...theme.animation.spring,
         useNativeDriver: true,
       }),
     ]).start();
@@ -190,7 +189,10 @@ export default function Dashboard() {
                 </LinearGradient>
               </TouchableOpacity>
             </View>
-            <Text style={styles.headerTitle}>Takım Görev{'\n'}Yöneticisi</Text>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>AICO</Text>
+              <Text style={styles.headerSubtitle}>{currentWorkspace?.name}</Text>
+            </View>
             <View style={styles.headerRight}>
               <TouchableOpacity
                 style={styles.iconButton}
@@ -412,12 +414,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.text.primary,
   },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '800',
     color: theme.colors.text.primary,
     textAlign: 'center',
-    lineHeight: 28,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: theme.colors.text.muted,
+    textAlign: 'center',
+    marginTop: 2,
   },
   headerRight: {
     width: 48,
@@ -427,7 +438,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: theme.colors.background.card,
+    backgroundColor: theme.colors.background.cardSolid,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

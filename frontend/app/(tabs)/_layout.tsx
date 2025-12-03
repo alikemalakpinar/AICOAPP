@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform, Text } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../../theme';
 
@@ -22,6 +21,7 @@ function TabBarButton({ children, onPress, accessibilityState }: any) {
       <View style={[styles.tabButtonInner, focused && styles.tabButtonFocused]}>
         {children}
       </View>
+      {focused && <View style={styles.activeIndicator} />}
     </TouchableOpacity>
   );
 }
@@ -39,7 +39,7 @@ function FloatingActionButton() {
       activeOpacity={0.8}
     >
       <LinearGradient
-        colors={theme.colors.gradients.primary}
+        colors={theme.colors.gradients.primaryVibrant}
         style={styles.fab}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -69,7 +69,7 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, focused }) => (
               <View style={styles.iconContainer}>
                 <Ionicons
-                  name={focused ? "grid" : "grid-outline"}
+                  name={focused ? "home" : "home-outline"}
                   size={24}
                   color={color}
                 />
@@ -83,7 +83,7 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, focused }) => (
               <View style={styles.iconContainer}>
                 <Ionicons
-                  name={focused ? "calendar" : "calendar-outline"}
+                  name={focused ? "folder" : "folder-outline"}
                   size={24}
                   color={color}
                 />
@@ -103,7 +103,7 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, focused }) => (
               <View style={styles.iconContainer}>
                 <Ionicons
-                  name={focused ? "checkmark-circle" : "checkmark-circle-outline"}
+                  name={focused ? "people" : "people-outline"}
                   size={24}
                   color={color}
                 />
@@ -117,7 +117,7 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, focused }) => (
               <View style={styles.iconContainer}>
                 <Ionicons
-                  name={focused ? "settings" : "settings-outline"}
+                  name={focused ? "person" : "person-outline"}
                   size={24}
                   color={color}
                 />
@@ -137,15 +137,15 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 24 : 16,
+    bottom: Platform.OS === 'ios' ? 28 : 16,
     left: 20,
     right: 20,
-    height: 70,
-    backgroundColor: theme.colors.background.card,
-    borderRadius: theme.borderRadius.xxl,
+    height: 72,
+    backgroundColor: theme.colors.background.cardSolid,
+    borderRadius: theme.borderRadius.xxxl,
     borderTopWidth: 0,
     paddingBottom: 0,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     ...theme.shadows.lg,
     borderWidth: 1,
     borderColor: theme.colors.border.light,
@@ -156,30 +156,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabButtonInner: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 50,
+    height: 50,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   tabButtonFocused: {
-    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    backgroundColor: theme.colors.accent.primary + '15',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 8,
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: theme.colors.accent.primary,
   },
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   fabContainer: {
-    top: -20,
+    top: -24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     ...theme.shadows.glow,
+    borderWidth: 3,
+    borderColor: theme.colors.background.primary,
   },
 });

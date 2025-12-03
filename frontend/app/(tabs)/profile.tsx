@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Animated,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -15,12 +16,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
 import { theme } from '../../theme';
+
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
+
+interface UserStats {
+  projects_count: number;
+  tasks_count: number;
+  completed_tasks: number;
+}
 
 export default function Profile() {
   const { user, logout } = useAuth();
   const { currentWorkspace, workspaces } = useWorkspaceStore();
   const router = useRouter();
+  const [stats, setStats] = useState<UserStats>({ projects_count: 0, tasks_count: 0, completed_tasks: 0 });
+  const [refreshing, setRefreshing] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -34,12 +46,33 @@ export default function Profile() {
       }),
       Animated.spring(slideAnim, {
         toValue: 0,
-        friction: 8,
-        tension: 40,
+        ...theme.animation.spring,
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+    fetchStats();
+  }, [currentWorkspace]);
+
+  const fetchStats = async () => {
+    if (!currentWorkspace) return;
+    try {
+      const response = await axios.get(`${API_URL}/analytics/dashboard?workspace_id=${currentWorkspace._id}`);
+      setStats({
+        projects_count: response.data.total_projects || 0,
+        tasks_count: response.data.total_tasks || 0,
+        completed_tasks: response.data.completed_tasks || 0,
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchStats();
+  }, [currentWorkspace]);
 
   const getInitials = (name: string) => {
     return name
@@ -73,7 +106,7 @@ export default function Profile() {
       gradient: theme.colors.gradients.primary,
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Yakında', 'Bu özellik yakında eklenecek');
+        router.push('/edit-profile');
       },
     },
     {
@@ -83,13 +116,13 @@ export default function Profile() {
       gradient: theme.colors.gradients.secondary,
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Yakında', 'Bu özellik yakında eklenecek');
+        router.push('/workspaces');
       },
     },
     {
       icon: 'notifications-outline' as const,
       title: 'Bildirimler',
-      subtitle: 'Bildirim ayarlarınızı yönetin',
+      subtitle: 'Bildirimlerinizi görüntüleyin',
       gradient: theme.colors.gradients.warning,
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -97,33 +130,33 @@ export default function Profile() {
       },
     },
     {
-      icon: 'shield-checkmark-outline' as const,
-      title: 'Gizlilik ve Güvenlik',
-      subtitle: 'Hesap güvenliğinizi yönetin',
+      icon: 'time-outline' as const,
+      title: 'Zaman Takibi',
+      subtitle: 'Çalışma saatlerinizi yönetin',
       gradient: theme.colors.gradients.success,
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Yakında', 'Bu özellik yakında eklenecek');
+        router.push('/timetracking');
       },
     },
     {
-      icon: 'color-palette-outline' as const,
-      title: 'Görünüm',
-      subtitle: 'Tema ve görünüm ayarları',
-      gradient: ['#ec4899', '#f472b6'] as [string, string],
+      icon: 'bar-chart-outline' as const,
+      title: 'Analitik',
+      subtitle: 'Performans raporlarınız',
+      gradient: theme.colors.gradients.info,
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Yakında', 'Bu özellik yakında eklenecek');
+        router.push('/analytics');
       },
     },
     {
-      icon: 'help-circle-outline' as const,
-      title: 'Yardım ve Destek',
-      subtitle: 'SSS ve destek alın',
-      gradient: ['#6366f1', '#818cf8'] as [string, string],
+      icon: 'settings-outline' as const,
+      title: 'Ayarlar',
+      subtitle: 'Uygulama tercihlerinizi yönetin',
+      gradient: theme.colors.gradients.tertiary,
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Yakında', 'Bu özellik yakında eklenecek');
+        router.push('/settings');
       },
     },
   ];
@@ -137,19 +170,35 @@ export default function Profile() {
             <Text style={styles.headerTitle}>Profil</Text>
             <TouchableOpacity
               style={styles.settingsButton}
-              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/settings');
+              }}
             >
               <Ionicons name="cog-outline" size={24} color={theme.colors.text.primary} />
             </TouchableOpacity>
           </Animated.View>
 
-          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.accent.primary} />
+            }
+          >
             {/* Profile Card */}
             <Animated.View style={[styles.profileCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
               <View style={styles.avatarSection}>
-                <View style={styles.avatarContainer}>
+                <TouchableOpacity
+                  style={styles.avatarContainer}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push('/edit-profile');
+                  }}
+                  activeOpacity={0.8}
+                >
                   <LinearGradient
-                    colors={theme.colors.gradients.primary}
+                    colors={theme.colors.gradients.primaryVibrant}
                     style={styles.avatar}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -158,10 +207,12 @@ export default function Profile() {
                       {user?.full_name ? getInitials(user.full_name) : 'U'}
                     </Text>
                   </LinearGradient>
-                  <TouchableOpacity style={styles.editAvatarButton}>
-                    <Ionicons name="camera" size={14} color={theme.colors.text.primary} />
-                  </TouchableOpacity>
-                </View>
+                  <View style={styles.editAvatarButton}>
+                    <LinearGradient colors={theme.colors.gradients.primary} style={styles.editAvatarGradient}>
+                      <Ionicons name="camera" size={14} color={theme.colors.text.primary} />
+                    </LinearGradient>
+                  </View>
+                </TouchableOpacity>
                 <Text style={styles.userName}>{user?.full_name}</Text>
                 <Text style={styles.userEmail}>{user?.email}</Text>
               </View>
@@ -174,12 +225,12 @@ export default function Profile() {
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>12</Text>
+                  <Text style={styles.statValue}>{stats.projects_count}</Text>
                   <Text style={styles.statLabel}>Proje</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>48</Text>
+                  <Text style={styles.statValue}>{stats.tasks_count}</Text>
                   <Text style={styles.statLabel}>Görev</Text>
                 </View>
               </View>
@@ -188,7 +239,14 @@ export default function Profile() {
             {/* Current Workspace */}
             {currentWorkspace && (
               <Animated.View style={[styles.workspaceCard, { opacity: fadeAnim }]}>
-                <View style={styles.workspaceHeader}>
+                <TouchableOpacity
+                  style={styles.workspaceContent}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push('/workspaces');
+                  }}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.workspaceIcon}>
                     <LinearGradient colors={theme.colors.gradients.secondary} style={styles.workspaceIconGradient}>
                       <Ionicons name="briefcase" size={20} color={theme.colors.text.primary} />
@@ -198,15 +256,40 @@ export default function Profile() {
                     <Text style={styles.workspaceLabel}>Aktif Çalışma Alanı</Text>
                     <Text style={styles.workspaceName}>{currentWorkspace.name}</Text>
                   </View>
-                  <TouchableOpacity style={styles.switchButton}>
+                  <View style={styles.switchButton}>
                     <Text style={styles.switchButtonText}>Değiştir</Text>
-                  </TouchableOpacity>
-                </View>
+                    <Ionicons name="chevron-forward" size={16} color={theme.colors.accent.primary} />
+                  </View>
+                </TouchableOpacity>
               </Animated.View>
             )}
 
+            {/* Quick Stats */}
+            <Animated.View style={[styles.quickStatsCard, { opacity: fadeAnim }]}>
+              <View style={styles.quickStatItem}>
+                <View style={[styles.quickStatIcon, { backgroundColor: theme.colors.accent.success + '20' }]}>
+                  <Ionicons name="checkmark-circle" size={22} color={theme.colors.accent.success} />
+                </View>
+                <View style={styles.quickStatInfo}>
+                  <Text style={styles.quickStatValue}>{stats.completed_tasks}</Text>
+                  <Text style={styles.quickStatLabel}>Tamamlanan</Text>
+                </View>
+              </View>
+              <View style={styles.quickStatDivider} />
+              <View style={styles.quickStatItem}>
+                <View style={[styles.quickStatIcon, { backgroundColor: theme.colors.accent.warning + '20' }]}>
+                  <Ionicons name="time" size={22} color={theme.colors.accent.warning} />
+                </View>
+                <View style={styles.quickStatInfo}>
+                  <Text style={styles.quickStatValue}>{stats.tasks_count - stats.completed_tasks}</Text>
+                  <Text style={styles.quickStatLabel}>Bekleyen</Text>
+                </View>
+              </View>
+            </Animated.View>
+
             {/* Menu Items */}
             <View style={styles.menuSection}>
+              <Text style={styles.sectionTitle}>Menü</Text>
               {menuItems.map((item, index) => (
                 <Animated.View
                   key={index}
@@ -244,7 +327,7 @@ export default function Profile() {
             <View style={styles.appInfoCard}>
               <View style={styles.appInfoHeader}>
                 <View style={styles.appLogo}>
-                  <LinearGradient colors={theme.colors.gradients.primary} style={styles.appLogoGradient}>
+                  <LinearGradient colors={theme.colors.gradients.primaryVibrant} style={styles.appLogoGradient}>
                     <Text style={styles.appLogoText}>A</Text>
                   </LinearGradient>
                 </View>
@@ -291,14 +374,14 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: theme.colors.text.primary,
   },
   settingsButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: theme.colors.background.card,
+    backgroundColor: theme.colors.background.cardSolid,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -309,7 +392,7 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     marginHorizontal: 20,
-    backgroundColor: theme.colors.background.card,
+    backgroundColor: theme.colors.background.cardSolid,
     borderRadius: theme.borderRadius.xxl,
     padding: 24,
     marginBottom: 16,
@@ -330,6 +413,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
+    ...theme.shadows.lg,
   },
   avatarText: {
     fontSize: 36,
@@ -343,15 +427,19 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: theme.colors.accent.primary,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: theme.colors.background.cardSolid,
+  },
+  editAvatarGradient: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: theme.colors.background.card,
   },
   userName: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: theme.colors.text.primary,
     marginBottom: 4,
   },
@@ -373,7 +461,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: theme.colors.text.primary,
     marginBottom: 4,
   },
@@ -388,16 +476,17 @@ const styles = StyleSheet.create({
   },
   workspaceCard: {
     marginHorizontal: 20,
-    backgroundColor: theme.colors.background.card,
+    backgroundColor: theme.colors.background.cardSolid,
     borderRadius: theme.borderRadius.xl,
-    padding: 16,
-    marginBottom: 24,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: theme.colors.border.light,
+    overflow: 'hidden',
   },
-  workspaceHeader: {
+  workspaceContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 16,
   },
   workspaceIcon: {
     marginRight: 12,
@@ -423,24 +512,75 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary,
   },
   switchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
     backgroundColor: theme.colors.accent.primary + '15',
+    gap: 4,
   },
   switchButtonText: {
     fontSize: 13,
     fontWeight: '600',
     color: theme.colors.accent.primary,
   },
+  quickStatsCard: {
+    marginHorizontal: 20,
+    backgroundColor: theme.colors.background.cardSolid,
+    borderRadius: theme.borderRadius.xl,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.border.light,
+    flexDirection: 'row',
+  },
+  quickStatItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  quickStatIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickStatInfo: {
+    flex: 1,
+  },
+  quickStatValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.colors.text.primary,
+  },
+  quickStatLabel: {
+    fontSize: 12,
+    color: theme.colors.text.muted,
+  },
+  quickStatDivider: {
+    width: 1,
+    marginHorizontal: 16,
+    backgroundColor: theme.colors.border.light,
+  },
   menuSection: {
     paddingHorizontal: 20,
     marginBottom: 16,
   },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors.text.muted,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.background.card,
+    backgroundColor: theme.colors.background.cardSolid,
     borderRadius: theme.borderRadius.xl,
     padding: 16,
     marginBottom: 12,
@@ -472,7 +612,7 @@ const styles = StyleSheet.create({
   },
   appInfoCard: {
     marginHorizontal: 20,
-    backgroundColor: theme.colors.background.card,
+    backgroundColor: theme.colors.background.cardSolid,
     borderRadius: theme.borderRadius.xl,
     padding: 16,
     marginBottom: 16,
