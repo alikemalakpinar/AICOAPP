@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,173 +9,349 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Animated,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { theme } from '../../theme';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signup } = useAuth();
   const router = useRouter();
 
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const handleSignup = async () => {
     if (!email || !password || !fullName) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır');
       return;
     }
 
     setLoading(true);
     try {
       await signup(email, password, fullName);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)/dashboard');
     } catch (error: any) {
-      Alert.alert('Signup Failed', error.message);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Kayıt Başarısız', error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[theme.colors.background.primary, theme.colors.background.secondary, theme.colors.background.primary]}
+        style={styles.gradient}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
         >
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>AICO</Text>
-            </View>
-            <Text style={styles.welcomeText}>Create Account</Text>
-            <Text style={styles.subtitle}>Join AICO to manage your projects</Text>
-          </View>
-
-          <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Full Name"
-                placeholderTextColor="#6b7280"
-                value={fullName}
-                onChangeText={setFullName}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#6b7280"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Password (min 6 characters)"
-                placeholderTextColor="#6b7280"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
-
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Back Button */}
             <TouchableOpacity
-              style={[styles.signupButton, loading && styles.signupButtonDisabled]}
-              onPress={handleSignup}
-              disabled={loading}
+              style={styles.backButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.back();
+              }}
             >
-              <Text style={styles.signupButtonText}>
-                {loading ? 'Creating Account...' : 'Sign Up'}
-              </Text>
+              <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
             </TouchableOpacity>
 
+            {/* Logo Section */}
+            <Animated.View
+              style={[
+                styles.logoSection,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ scale: scaleAnim }],
+                },
+              ]}
+            >
+              <View style={styles.logo3DContainer}>
+                <View style={styles.logo3DLayer2} />
+                <LinearGradient
+                  colors={theme.colors.gradients.secondary}
+                  style={styles.logo3DLayer1}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="person-add" size={48} color={theme.colors.text.primary} />
+                </LinearGradient>
+              </View>
+            </Animated.View>
+
+            {/* Welcome Text */}
+            <Animated.View
+              style={[
+                styles.welcomeSection,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <Text style={styles.welcomeTitle}>Hesap Oluştur</Text>
+              <Text style={styles.welcomeSubtitle}>
+                AICO'ya katılın ve projelerinizi yönetmeye başlayın
+              </Text>
+            </Animated.View>
+
+            {/* Form Section */}
+            <Animated.View
+              style={[
+                styles.formSection,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              {/* Full Name Input */}
+              <View style={styles.inputContainer}>
+                <Ionicons name="person-outline" size={20} color={theme.colors.text.muted} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ad Soyad"
+                  placeholderTextColor={theme.colors.text.muted}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  autoCorrect={false}
+                />
+              </View>
+
+              {/* Email Input */}
+              <View style={styles.inputContainer}>
+                <Ionicons name="mail-outline" size={20} color={theme.colors.text.muted} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="E-posta adresiniz"
+                  placeholderTextColor={theme.colors.text.muted}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={20} color={theme.colors.text.muted} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Şifre (min 6 karakter)"
+                  placeholderTextColor={theme.colors.text.muted}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color={theme.colors.text.muted}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Password Requirements */}
+              <View style={styles.requirementsContainer}>
+                <View style={styles.requirementItem}>
+                  <Ionicons
+                    name={password.length >= 6 ? "checkmark-circle" : "ellipse-outline"}
+                    size={16}
+                    color={password.length >= 6 ? theme.colors.accent.success : theme.colors.text.muted}
+                  />
+                  <Text style={[
+                    styles.requirementText,
+                    password.length >= 6 && styles.requirementTextMet
+                  ]}>
+                    En az 6 karakter
+                  </Text>
+                </View>
+              </View>
+
+              {/* Signup Button */}
+              <TouchableOpacity
+                onPress={handleSignup}
+                disabled={loading}
+                activeOpacity={0.8}
+                style={styles.buttonContainer}
+              >
+                <LinearGradient
+                  colors={theme.colors.gradients.secondary}
+                  style={styles.signupButton}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  {loading ? (
+                    <View style={styles.loadingIndicator} />
+                  ) : (
+                    <Text style={styles.signupButtonText}>Kayıt Ol</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Terms */}
+              <Text style={styles.termsText}>
+                Kayıt olarak{' '}
+                <Text style={styles.termsLink}>Kullanım Şartları</Text>
+                {' '}ve{' '}
+                <Text style={styles.termsLink}>Gizlilik Politikası</Text>
+                'nı kabul etmiş olursunuz.
+              </Text>
+            </Animated.View>
+
+            {/* Login Link */}
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => router.back()}>
-                <Text style={styles.loginLink}>Sign In</Text>
+              <Text style={styles.loginText}>Zaten hesabınız var mı? </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.back();
+                }}
+              >
+                <Text style={styles.loginLink}>Giriş Yap</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0c0d1f',
+    backgroundColor: theme.colors.background.primary,
+  },
+  gradient: {
+    flex: 1,
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: 24,
+    paddingTop: 60,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#1e40af',
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: theme.colors.background.card,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.border.light,
   },
-  logoText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#ffffff',
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 32,
   },
-  welcomeText: {
+  logo3DContainer: {
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo3DLayer2: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    backgroundColor: theme.colors.accent.tertiary + '30',
+    borderRadius: 32,
+    transform: [{ rotate: '10deg' }, { translateX: 8 }, { translateY: 8 }],
+  },
+  logo3DLayer1: {
+    width: 100,
+    height: 100,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...theme.shadows.lg,
+  },
+  welcomeSection: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  welcomeTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 8,
+    color: theme.colors.text.primary,
+    textAlign: 'center',
+    marginBottom: 12,
   },
-  subtitle: {
+  welcomeSubtitle: {
     fontSize: 16,
-    color: '#9ca3af',
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 24,
   },
-  formContainer: {
+  formSection: {
     width: '100%',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1c2e',
-    borderRadius: 12,
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.lg,
     marginBottom: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#2d3148',
+    borderColor: theme.colors.border.light,
   },
   inputIcon: {
     marginRight: 12,
@@ -183,36 +359,73 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 56,
-    color: '#ffffff',
+    color: theme.colors.text.primary,
     fontSize: 16,
   },
+  eyeButton: {
+    padding: 8,
+  },
+  requirementsContainer: {
+    marginBottom: 20,
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  requirementText: {
+    fontSize: 14,
+    color: theme.colors.text.muted,
+  },
+  requirementTextMet: {
+    color: theme.colors.accent.success,
+  },
+  buttonContainer: {
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
+  },
   signupButton: {
-    backgroundColor: '#1e40af',
-    borderRadius: 12,
     height: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-  },
-  signupButtonDisabled: {
-    opacity: 0.6,
+    borderRadius: theme.borderRadius.lg,
   },
   signupButtonText: {
-    color: '#ffffff',
     fontSize: 18,
     fontWeight: '600',
+    color: theme.colors.text.primary,
+  },
+  loadingIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.text.primary,
+    borderTopColor: 'transparent',
+  },
+  termsText: {
+    fontSize: 13,
+    color: theme.colors.text.muted,
+    textAlign: 'center',
+    marginTop: 20,
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: theme.colors.accent.primary,
+    fontWeight: '500',
   },
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: 32,
+    paddingBottom: 24,
   },
   loginText: {
-    color: '#9ca3af',
+    color: theme.colors.text.secondary,
     fontSize: 16,
   },
   loginLink: {
-    color: '#3b82f6',
+    color: theme.colors.accent.primary,
     fontSize: 16,
     fontWeight: '600',
   },

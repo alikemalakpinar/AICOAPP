@@ -1,68 +1,185 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { theme } from '../../theme';
+
+function TabBarButton({ children, onPress, accessibilityState }: any) {
+  const focused = accessibilityState?.selected;
+
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+      style={styles.tabButton}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.tabButtonInner, focused && styles.tabButtonFocused]}>
+        {children}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function FloatingActionButton() {
+  const router = useRouter();
+
+  return (
+    <TouchableOpacity
+      style={styles.fabContainer}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push('/create');
+      }}
+      activeOpacity={0.8}
+    >
+      <LinearGradient
+        colors={theme.colors.gradients.primary}
+        style={styles.fab}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name="add" size={28} color="#ffffff" />
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#e5e7eb',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#9ca3af',
-      }}
-    >
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: 'Ana Sayfa',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
+    <View style={styles.container}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: theme.colors.accent.primary,
+          tabBarInactiveTintColor: theme.colors.text.muted,
+          tabBarShowLabel: false,
+          tabBarButton: (props) => <TabBarButton {...props} />,
         }}
-      />
-      <Tabs.Screen
-        name="projects"
-        options={{
-          title: 'Projeler',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="briefcase" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="requests"
-        options={{
-          title: 'Talepler',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="team"
-        options={{
-          title: 'Takım',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profil',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="dashboard"
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <View style={styles.iconContainer}>
+                <Ionicons
+                  name={focused ? "grid" : "grid-outline"}
+                  size={24}
+                  color={color}
+                />
+              </View>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="projects"
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <View style={styles.iconContainer}>
+                <Ionicons
+                  name={focused ? "calendar" : "calendar-outline"}
+                  size={24}
+                  color={color}
+                />
+              </View>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="requests"
+          options={{
+            tabBarButton: () => <FloatingActionButton />,
+          }}
+        />
+        <Tabs.Screen
+          name="team"
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <View style={styles.iconContainer}>
+                <Ionicons
+                  name={focused ? "checkmark-circle" : "checkmark-circle-outline"}
+                  size={24}
+                  color={color}
+                />
+              </View>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <View style={styles.iconContainer}>
+                <Ionicons
+                  name={focused ? "settings" : "settings-outline"}
+                  size={24}
+                  color={color}
+                />
+              </View>
+            ),
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background.primary,
+  },
+  tabBar: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 24 : 16,
+    left: 20,
+    right: 20,
+    height: 70,
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.xxl,
+    borderTopWidth: 0,
+    paddingBottom: 0,
+    paddingHorizontal: 10,
+    ...theme.shadows.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border.light,
+  },
+  tabButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabButtonInner: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabButtonFocused: {
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+  },
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabContainer: {
+    top: -20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...theme.shadows.glow,
+  },
+});
