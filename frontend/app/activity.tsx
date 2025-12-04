@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { theme } from '../theme';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useWorkspaceStore } from '../store/workspaceStore';
+import { useWorkspaceStore } from '../stores/workspaceStore';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
