@@ -130,7 +130,7 @@ function SwipeableNotification({ notification, onMarkRead, onDelete, getIcon, ge
       {/* Left Action - Mark as Read */}
       <Animated.View style={[styles.actionContainer, styles.leftAction, { opacity: leftActionOpacity }]}>
         <LinearGradient
-          colors={[theme.colors.accent.success, theme.colors.accent.success + 'dd']}
+          colors={[theme.colors.semantic.success, theme.colors.semantic.success + 'dd']}
           style={styles.actionGradient}
         >
           <Ionicons name="checkmark-done" size={24} color="#ffffff" />
@@ -141,7 +141,7 @@ function SwipeableNotification({ notification, onMarkRead, onDelete, getIcon, ge
       {/* Right Action - Delete */}
       <Animated.View style={[styles.actionContainer, styles.rightAction, { opacity: rightActionOpacity }]}>
         <LinearGradient
-          colors={[theme.colors.accent.error + 'dd', theme.colors.accent.error]}
+          colors={[theme.colors.semantic.error + 'dd', theme.colors.semantic.error]}
           style={styles.actionGradient}
         >
           <Ionicons name="trash" size={24} color="#ffffff" />
@@ -291,11 +291,11 @@ export default function Notifications() {
     switch (type) {
       case 'task': return theme.colors.accent.primary;
       case 'project': return theme.colors.accent.secondary;
-      case 'team': return theme.colors.accent.success;
-      case 'deadline': return theme.colors.accent.error;
-      case 'comment': return theme.colors.accent.warning;
+      case 'team': return theme.colors.semantic.success;
+      case 'deadline': return theme.colors.semantic.error;
+      case 'comment': return theme.colors.semantic.warning;
       case 'mention': return '#ec4899';
-      default: return theme.colors.text.muted;
+      default: return theme.colors.text.tertiary;
     }
   };
 
@@ -443,7 +443,7 @@ export default function Notifications() {
                       colors={[theme.colors.accent.primary + '20', theme.colors.accent.secondary + '20']}
                       style={styles.emptyIconGradient}
                     >
-                      <Ionicons name="notifications-off-outline" size={48} color={theme.colors.text.muted} />
+                      <Ionicons name="notifications-off-outline" size={48} color={theme.colors.text.tertiary} />
                     </LinearGradient>
                   </View>
                   <Text style={styles.emptyTitle}>Bildirim Yok</Text>
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border.light,
+    borderColor: theme.colors.border.primary,
   },
   headerCenter: {
     flexDirection: 'row',
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary,
   },
   unreadBadge: {
-    backgroundColor: theme.colors.accent.error,
+    backgroundColor: theme.colors.semantic.error,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: theme.colors.background.card,
     borderWidth: 1,
-    borderColor: theme.colors.border.light,
+    borderColor: theme.colors.border.primary,
     marginRight: 8,
   },
   filterChipActive: {
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
   groupTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text.muted,
+    color: theme.colors.text.tertiary,
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   actionGradient: {
     width: ACTION_WIDTH,
     height: '90%',
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -605,10 +605,10 @@ const styles = StyleSheet.create({
   },
   notificationCard: {
     backgroundColor: theme.colors.background.card,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border.light,
+    borderColor: theme.colors.border.primary,
   },
   unreadCard: {
     borderLeftWidth: 3,
@@ -653,13 +653,13 @@ const styles = StyleSheet.create({
   },
   notificationMessage: {
     fontSize: 13,
-    color: theme.colors.text.muted,
+    color: theme.colors.text.tertiary,
     lineHeight: 18,
     marginBottom: 6,
   },
   notificationTime: {
     fontSize: 12,
-    color: theme.colors.text.muted,
+    color: theme.colors.text.tertiary,
   },
   emptyState: {
     flex: 1,
@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: 14,
-    color: theme.colors.text.muted,
+    color: theme.colors.text.tertiary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -697,17 +697,17 @@ const styles = StyleSheet.create({
   skeletonCard: {
     flexDirection: 'row',
     backgroundColor: theme.colors.background.card,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border.light,
+    borderColor: theme.colors.border.primary,
   },
   skeletonIcon: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: theme.colors.background.elevated,
+    backgroundColor: theme.colors.background.tertiary,
     marginRight: 12,
   },
   skeletonContent: {
@@ -717,20 +717,20 @@ const styles = StyleSheet.create({
     width: '60%',
     height: 16,
     borderRadius: 4,
-    backgroundColor: theme.colors.background.elevated,
+    backgroundColor: theme.colors.background.tertiary,
     marginBottom: 8,
   },
   skeletonMessage: {
     width: '90%',
     height: 14,
     borderRadius: 4,
-    backgroundColor: theme.colors.background.elevated,
+    backgroundColor: theme.colors.background.tertiary,
     marginBottom: 8,
   },
   skeletonTime: {
     width: '30%',
     height: 12,
     borderRadius: 4,
-    backgroundColor: theme.colors.background.elevated,
+    backgroundColor: theme.colors.background.tertiary,
   },
 });
