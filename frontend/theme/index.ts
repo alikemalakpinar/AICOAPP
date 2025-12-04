@@ -19,6 +19,7 @@ export const theme = {
     text: {
       primary: '#f8fafc',
       secondary: '#94a3b8',
+      tertiary: '#64748b',
       muted: '#64748b',
       disabled: '#475569',
       inverse: '#0f1117',
@@ -33,6 +34,10 @@ export const theme = {
       secondaryLight: '#818cf8',
       hover: '#4f8ff7',
       muted: 'rgba(59, 130, 246, 0.15)',
+      // Backwards compatibility aliases
+      success: '#22c55e',
+      error: '#ef4444',
+      warning: '#f59e0b',
     },
     // Semantic colors - Functional, not decorative
     semantic: {
@@ -47,6 +52,7 @@ export const theme = {
     },
     // Border colors
     border: {
+      primary: '#2d3548',
       light: '#2d3548',
       medium: '#3d4660',
       strong: '#4d5a78',
@@ -88,6 +94,18 @@ export const theme = {
       pink: { bg: 'rgba(236, 72, 153, 0.15)', text: '#f472b6' },
       cyan: { bg: 'rgba(6, 182, 212, 0.15)', text: '#22d3ee' },
       gray: { bg: 'rgba(100, 116, 139, 0.15)', text: '#94a3b8' },
+    },
+    // Gradients inside colors for backwards compatibility
+    gradients: {
+      primary: ['#3b82f6', '#2563eb'] as const,
+      primaryVibrant: ['#3b82f6', '#1d4ed8'] as const,
+      secondary: ['#6366f1', '#4f46e5'] as const,
+      success: ['#22c55e', '#16a34a'] as const,
+      warning: ['#f59e0b', '#d97706'] as const,
+      error: ['#ef4444', '#dc2626'] as const,
+      info: ['#06b6d4', '#0891b2'] as const,
+      tertiary: ['#8b5cf6', '#7c3aed'] as const,
+      dark: ['#1e2230', '#0f1117'] as const,
     },
   },
   spacing: {
