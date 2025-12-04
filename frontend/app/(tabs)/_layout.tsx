@@ -39,7 +39,7 @@ function FloatingActionButton() {
       activeOpacity={0.8}
     >
       <LinearGradient
-        colors={theme.colors.gradients.primaryVibrant}
+        colors={theme.gradients?.primaryVibrant || ['#6C63FF', '#48C6EF']}
         style={styles.fab}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}

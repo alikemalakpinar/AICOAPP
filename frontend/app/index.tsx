@@ -66,7 +66,7 @@ export default function Index() {
         <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
           <Animated.View style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}>
             <LinearGradient
-              colors={theme.colors.gradients.primaryVibrant}
+              colors={theme.gradients.primaryVibrant}
               style={styles.logo}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -81,7 +81,7 @@ export default function Index() {
             <View style={styles.loadingBar}>
               <Animated.View style={[styles.loadingProgress, { opacity: pulseAnim }]}>
                 <LinearGradient
-                  colors={theme.colors.gradients.primary}
+                  colors={theme.gradients.primary}
                   style={styles.loadingGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
