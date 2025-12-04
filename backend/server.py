@@ -8,7 +8,8 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, EmailStr, validator
+from pydantic import BaseModel, Field, EmailStr, field_validator
+from contextlib import asynccontextmanager
 from bson import ObjectId
 from collections import defaultdict
 import os
@@ -134,8 +135,9 @@ class UserCreate(BaseModel):
     password: str
     full_name: str = Field(..., min_length=2, max_length=100)
 
-    @validator('password')
-    def validate_password(cls, v):
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
         if len(v) < config.MIN_PASSWORD_LENGTH:
             raise ValueError(f'Password must be at least {config.MIN_PASSWORD_LENGTH} characters')
         if config.REQUIRE_UPPERCASE and not re.search(r'[A-Z]', v):
@@ -146,8 +148,9 @@ class UserCreate(BaseModel):
             raise ValueError('Password must contain at least one digit')
         return v
 
-    @validator('full_name')
-    def validate_name(cls, v):
+    @field_validator('full_name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
         if not re.match(r'^[\w\s\-\.]+$', v, re.UNICODE):
             raise ValueError('Name contains invalid characters')
         return v.strip()
@@ -167,8 +170,9 @@ class PasswordChange(BaseModel):
     current_password: str
     new_password: str
 
-    @validator('new_password')
-    def validate_password(cls, v):
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
         if len(v) < config.MIN_PASSWORD_LENGTH:
             raise ValueError(f'Password must be at least {config.MIN_PASSWORD_LENGTH} characters')
         if config.REQUIRE_UPPERCASE and not re.search(r'[A-Z]', v):
@@ -282,14 +286,16 @@ class FileUpload(BaseModel):
     task_id: Optional[str] = None
     workspace_id: str
 
-    @validator('size')
-    def validate_size(cls, v):
+    @field_validator('size')
+    @classmethod
+    def validate_size(cls, v: int) -> int:
         if v > config.MAX_FILE_SIZE:
             raise ValueError(f'File size exceeds maximum limit of {config.MAX_FILE_SIZE // (1024*1024)}MB')
         return v
 
-    @validator('mime_type')
-    def validate_mime_type(cls, v):
+    @field_validator('mime_type')
+    @classmethod
+    def validate_mime_type(cls, v: str) -> str:
         if v not in config.ALLOWED_FILE_TYPES:
             raise ValueError(f'File type {v} is not allowed')
         return v
@@ -311,6 +317,36 @@ class UserSettings(BaseModel):
     sound_enabled: bool = True
     desktop_notifications: bool = True
 
+# ==================== LIFESPAN ====================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("AICO API starting up...")
+
+    # Create indexes for better performance
+    try:
+        await db.users.create_index("email", unique=True)
+        await db.workspaces.create_index("member_ids")
+        await db.projects.create_index("workspace_id")
+        await db.tasks.create_index("project_id")
+        await db.tasks.create_index("assigned_to")
+        await db.notifications.create_index([("user_id", 1), ("read", 1)])
+        await db.activities.create_index([("workspace_id", 1), ("created_at", -1)])
+        await db.notes.create_index("workspace_id")
+        await db.files.create_index("workspace_id")
+        logger.info("Database indexes created")
+    except Exception as e:
+        logger.warning(f"Index creation warning: {str(e)}")
+
+    logger.info("AICO API ready")
+
+    yield
+
+    # Shutdown
+    client.close()
+    logger.info("Database connection closed")
+
 # ==================== APP INITIALIZATION ====================
 
 app = FastAPI(
@@ -318,7 +354,8 @@ app = FastAPI(
     description="Professional Project Management API",
     version="2.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 api_router = APIRouter(prefix="/api")
@@ -1060,14 +1097,26 @@ async def create_task(task: TaskCreate, current_user: dict = Depends(get_current
 @api_router.get("/tasks")
 async def get_tasks(
     project_id: Optional[str] = None,
+    workspace_id: Optional[str] = None,
     status: Optional[str] = None,
     priority: Optional[str] = None,
     assigned_to: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
-    if project_id:
+
+    # If workspace_id is provided, get all tasks from all projects in that workspace
+    if workspace_id:
+        workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
+        if not workspace or current_user["_id"] not in workspace["member_ids"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        projects = await db.projects.find({"workspace_id": workspace_id}).to_list(1000)
+        project_ids = [str(p["_id"]) for p in projects]
+        query["project_id"] = {"$in": project_ids}
+    elif project_id:
         query["project_id"] = project_id
+
     if status:
         query["status"] = status
     if priority:
@@ -1083,6 +1132,13 @@ async def get_tasks(
         subtasks = await db.subtasks.find({"task_id": t["_id"]}).to_list(100)
         t["subtask_count"] = len(subtasks)
         t["completed_subtasks"] = len([s for s in subtasks if s.get("completed")])
+
+        # Get project info for context
+        if workspace_id:
+            project = next((p for p in projects if str(p["_id"]) == t["project_id"]), None)
+            if project:
+                t["project_name"] = project.get("name", "")
+                t["project_color"] = project.get("color", "#3b82f6")
 
     return tasks
 
@@ -2187,32 +2243,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==================== SHUTDOWN ====================
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
-    logger.info("Database connection closed")
-
-# ==================== STARTUP ====================
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("AICO API starting up...")
-
-    # Create indexes for better performance
-    try:
-        await db.users.create_index("email", unique=True)
-        await db.workspaces.create_index("member_ids")
-        await db.projects.create_index("workspace_id")
-        await db.tasks.create_index("project_id")
-        await db.tasks.create_index("assigned_to")
-        await db.notifications.create_index([("user_id", 1), ("read", 1)])
-        await db.activities.create_index([("workspace_id", 1), ("created_at", -1)])
-        await db.notes.create_index("workspace_id")
-        await db.files.create_index("workspace_id")
-        logger.info("Database indexes created")
-    except Exception as e:
-        logger.warning(f"Index creation warning: {str(e)}")
-
-    logger.info("AICO API ready")
+# Note: Startup and shutdown are now handled via the lifespan context manager
