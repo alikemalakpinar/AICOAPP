@@ -23,6 +23,8 @@ import { tr } from 'date-fns/locale';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../../theme';
 import LottieView from 'lottie-react-native';
+import { SkeletonListLoader } from '../../components/SkeletonLoader';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const { width } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
@@ -47,6 +49,7 @@ export default function Projects() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [newProject, setNewProject] = useState({ name: '', description: '', status: 'not_started' });
 
@@ -136,7 +139,7 @@ export default function Projects() {
   };
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = project.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
     const matchesFilter = selectedFilter === 'all' || project.status === selectedFilter;
     return matchesSearch && matchesFilter;
   });
@@ -235,15 +238,7 @@ export default function Projects() {
             }
           >
             {loading ? (
-              <View style={styles.loadingContainer}>
-                <LottieView
-                  source={require('../../assets/animations/loading.json')}
-                  autoPlay
-                  loop
-                  style={{ width: 100, height: 100 }}
-                />
-                <Text style={styles.loadingText}>Yukleniyor...</Text>
-              </View>
+              <SkeletonListLoader count={4} type="card" />
             ) : filteredProjects.length === 0 ? (
               <View style={styles.emptyListContainer}>
                 <LottieView

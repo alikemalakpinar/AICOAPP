@@ -21,6 +21,7 @@ import { format, addDays, startOfWeek, isSameDay, isToday } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { theme } from '../../theme';
 import LottieView from 'lottie-react-native';
+import { SkeletonDashboard } from '../../components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
@@ -385,21 +386,30 @@ export default function Dashboard() {
     );
   }
 
-  // Loading State
+  // Loading State - Skeleton Loader ile daha iyi UX
   if (loading) {
     return (
       <View style={styles.container}>
         <LinearGradient colors={[theme.colors.background.primary, theme.colors.background.secondary]} style={styles.gradient}>
           <SafeAreaView style={styles.safeArea}>
-            <View style={styles.loadingContainer}>
-              <LottieView
-                source={require('../../assets/animations/loading.json')}
-                autoPlay
-                loop
-                style={styles.lottieLoading}
-              />
-              <Text style={styles.loadingText}>Yukleniyor...</Text>
-            </View>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+              {/* Header Skeleton */}
+              <View style={styles.header}>
+                <View style={styles.headerTop}>
+                  <View style={[styles.logoContainer, { backgroundColor: theme.colors.background.card }]} />
+                  <View style={styles.headerIcons}>
+                    <View style={styles.iconButton} />
+                    <View style={[styles.profileButton, { backgroundColor: theme.colors.background.card }]} />
+                  </View>
+                </View>
+                <View style={styles.welcomeSection}>
+                  <View style={{ width: 80, height: 16, backgroundColor: theme.colors.background.card, borderRadius: 8, marginBottom: 8 }} />
+                  <View style={{ width: 150, height: 32, backgroundColor: theme.colors.background.card, borderRadius: 8, marginBottom: 8 }} />
+                  <View style={{ width: 200, height: 24, backgroundColor: theme.colors.background.card, borderRadius: 8 }} />
+                </View>
+              </View>
+              <SkeletonDashboard />
+            </ScrollView>
           </SafeAreaView>
         </LinearGradient>
       </View>

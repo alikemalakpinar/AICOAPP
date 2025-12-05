@@ -10,6 +10,7 @@ import {
   Modal,
   Animated,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +22,7 @@ import { tr } from 'date-fns/locale';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../theme';
 import { SwipeableCard } from '../components/SwipeableCard';
+import { SkeletonProjectDetail } from '../components/SkeletonLoader';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -63,6 +65,7 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [modalVisible, setModalVisible] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium' });
@@ -136,7 +139,14 @@ export default function ProjectDetail() {
       }).start();
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRefreshing(true);
+    fetchProjectData();
   };
 
   const handleCreateTask = async () => {
@@ -227,15 +237,6 @@ export default function ProjectDetail() {
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
   const todoTasks = tasks.filter(t => t.status === 'todo').length;
 
-  // Skeleton loader
-  const renderSkeleton = () => (
-    <View style={styles.skeletonContainer}>
-      <View style={styles.skeletonHeader} />
-      <View style={styles.skeletonCard} />
-      <View style={styles.skeletonStats} />
-    </View>
-  );
-
   if (loading) {
     return (
       <View style={styles.container}>
@@ -244,7 +245,20 @@ export default function ProjectDetail() {
           style={styles.gradient}
         >
           <SafeAreaView style={styles.safeArea} edges={['top']}>
-            {renderSkeleton()}
+            {/* Header */}
+            <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                style={styles.backButton}
+              >
+                <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>Proje Detayı</Text>
+              <View style={{ width: 40 }} />
+            </Animated.View>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+              <SkeletonProjectDetail />
+            </ScrollView>
           </SafeAreaView>
         </LinearGradient>
       </View>
@@ -296,6 +310,13 @@ export default function ProjectDetail() {
             style={styles.scrollView}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={theme.colors.accent.primary}
+              />
+            }
           >
             {/* Project Header Card */}
             <Animated.View style={[styles.projectCard, { opacity: headerOpacity, transform: [{ translateY: contentTranslate }] }]}>

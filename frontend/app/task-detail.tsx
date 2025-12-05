@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -23,6 +24,7 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { theme, getStatusColor, getStatusBackground, getPriorityColor, getPriorityBackground } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { SkeletonTaskDetail } from '../components/SkeletonLoader';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
 
@@ -55,6 +57,7 @@ export default function TaskDetail() {
   const [task, setTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
@@ -125,6 +128,13 @@ export default function TaskDetail() {
       console.error('Error fetching comments:', error);
       setComments([]);
     }
+  };
+
+  const onRefresh = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRefreshing(true);
+    await Promise.all([fetchTask(), fetchComments()]);
+    setRefreshing(false);
   };
 
   const handleUpdateStatus = async (newStatus: string) => {
@@ -214,9 +224,20 @@ export default function TaskDetail() {
       <View style={styles.container}>
         <LinearGradient colors={[theme.colors.background.primary, theme.colors.background.secondary]} style={styles.gradient}>
           <SafeAreaView style={styles.safeArea}>
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Yükleniyor...</Text>
-            </View>
+            {/* Header */}
+            <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}
+              >
+                <Ionicons name="chevron-back" size={24} color={theme.colors.text.primary} />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>Görev Detayı</Text>
+              <View style={{ width: 40 }} />
+            </Animated.View>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+              <SkeletonTaskDetail />
+            </ScrollView>
           </SafeAreaView>
         </LinearGradient>
       </View>
@@ -270,7 +291,17 @@ export default function TaskDetail() {
               </TouchableOpacity>
             </Animated.View>
 
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.scrollView}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={theme.colors.accent.primary}
+                />
+              }
+            >
               {/* Task Title */}
               <Animated.View style={[styles.titleSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
                 <Text style={styles.taskTitle}>{task.title}</Text>
