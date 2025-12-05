@@ -150,8 +150,12 @@ const ToastItem = ({
         <Ionicons name={getIcon()} size={24} color={color} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{toast.title}</Text>
-        {toast.message && <Text style={styles.message}>{toast.message}</Text>}
+        <Text style={styles.title}>{typeof toast.title === 'string' ? toast.title : String(toast.title)}</Text>
+        {toast.message && (
+          <Text style={styles.message}>
+            {typeof toast.message === 'string' ? toast.message : JSON.stringify(toast.message)}
+          </Text>
+        )}
       </View>
       <TouchableOpacity onPress={hide} style={styles.closeButton}>
         <Ionicons name="close" size={20} color={theme.colors.text.muted} />
