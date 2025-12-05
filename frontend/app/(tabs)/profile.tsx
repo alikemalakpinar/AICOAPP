@@ -150,6 +150,16 @@ export default function Profile() {
       },
     },
     {
+      icon: 'document-text-outline' as const,
+      title: 'Talepler',
+      subtitle: 'Talep ve isteklerinizi yönetin',
+      gradient: theme.colors.gradients.secondary,
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push('/requests');
+      },
+    },
+    {
       icon: 'settings-outline' as const,
       title: 'Ayarlar',
       subtitle: 'Uygulama tercihlerinizi yönetin',

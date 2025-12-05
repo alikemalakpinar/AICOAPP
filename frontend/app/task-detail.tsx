@@ -28,14 +28,24 @@ import { SkeletonTaskDetail } from '../components/SkeletonLoader';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
 
+interface AssignedUser {
+  _id: string;
+  full_name: string;
+  email: string;
+  avatar?: string;
+}
+
 interface Task {
   _id: string;
   title: string;
   description?: string;
   project_id: string;
+  project_name?: string;
+  project_color?: string;
   status: string;
   priority: string;
   assigned_to?: string;
+  assigned_user?: AssignedUser;
   deadline?: string;
   created_by: string;
   created_at: string;
@@ -339,6 +349,18 @@ export default function TaskDetail() {
               <Animated.View style={[styles.detailsSection, { opacity: fadeAnim }]}>
                 <Text style={styles.sectionTitle}>Detaylar</Text>
                 <View style={styles.detailsCard}>
+                  {task.assigned_user && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailIcon}>
+                        <Ionicons name="person-outline" size={20} color={theme.colors.accent.tertiary} />
+                      </View>
+                      <View style={styles.detailContent}>
+                        <Text style={styles.detailLabel}>Atanan Kişi</Text>
+                        <Text style={styles.detailValue}>{task.assigned_user.full_name}</Text>
+                      </View>
+                    </View>
+                  )}
+
                   {task.deadline && (
                     <View style={styles.detailRow}>
                       <View style={styles.detailIcon}>
@@ -349,6 +371,18 @@ export default function TaskDetail() {
                         <Text style={styles.detailValue}>
                           {format(new Date(task.deadline), 'd MMMM yyyy', { locale: tr })}
                         </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {task.project_name && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailIcon}>
+                        <View style={[styles.projectDot, { backgroundColor: task.project_color || '#3b82f6' }]} />
+                      </View>
+                      <View style={styles.detailContent}>
+                        <Text style={styles.detailLabel}>Proje</Text>
+                        <Text style={styles.detailValue}>{task.project_name}</Text>
                       </View>
                     </View>
                   )}
@@ -660,6 +694,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: theme.colors.text.primary,
+  },
+  projectDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   commentsSection: {
     marginBottom: 24,

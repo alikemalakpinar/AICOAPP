@@ -356,6 +356,11 @@ export default function Dashboard() {
     .filter(task => task.status !== 'done')
     .slice(0, 5);
 
+  // Tasks assigned to current user
+  const myTasks = tasks
+    .filter(task => task.assigned_to === user?._id && task.status !== 'done')
+    .slice(0, 5);
+
   // Empty Workspace State
   if (!currentWorkspace) {
     return (
@@ -634,6 +639,63 @@ export default function Dashboard() {
                     )}
                   </ScrollView>
                 </Card3D>
+
+                {/* My Tasks - Tasks assigned to current user */}
+                {myTasks.length > 0 && (
+                  <Card3D style={styles.section} delay={650}>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionTitleContainer}>
+                        <Ionicons name="person-circle-outline" size={20} color={theme.colors.accent.primary} />
+                        <Text style={styles.sectionTitle}>Bana Atanan Gorevler</Text>
+                      </View>
+                      <View style={styles.myTasksBadge}>
+                        <Text style={styles.myTasksBadgeText}>{myTasks.length}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.tasksList}>
+                      {myTasks.map((task) => (
+                        <TouchableOpacity
+                          key={task._id}
+                          style={[styles.taskItem, styles.myTaskItem]}
+                          onPress={() => router.push(`/task-detail?id=${task._id}`)}
+                          activeOpacity={0.8}
+                        >
+                          <View style={[styles.taskPriorityBar, { backgroundColor: getPriorityColor(task.priority) }]} />
+                          <View style={styles.taskContent}>
+                            <View style={styles.taskHeader}>
+                              <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>
+                              <View style={[styles.taskStatus, { backgroundColor: getStatusColor(task.status) + '20' }]}>
+                                <Text style={[styles.taskStatusText, { color: getStatusColor(task.status) }]}>
+                                  {task.status === 'todo' ? 'Yapılacak' :
+                                    task.status === 'in_progress' ? 'Devam' :
+                                      task.status === 'review' ? 'Inceleme' : 'Bitti'}
+                                </Text>
+                              </View>
+                            </View>
+                            <View style={styles.taskMeta}>
+                              {task.project_name && (
+                                <View style={styles.taskProject}>
+                                  <View style={[styles.taskProjectDot, { backgroundColor: task.project_color || '#3b82f6' }]} />
+                                  <Text style={styles.taskProjectName}>{task.project_name}</Text>
+                                </View>
+                              )}
+                              {task.deadline && (
+                                <View style={styles.taskDeadline}>
+                                  <Ionicons name="calendar-outline" size={12} color={theme.colors.text.muted} />
+                                  <Text style={styles.taskDeadlineText}>
+                                    {format(new Date(task.deadline), 'd MMM', { locale: tr })}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          </View>
+                          <Ionicons name="chevron-forward" size={20} color={theme.colors.text.muted} />
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </Card3D>
+                )}
 
                 {/* Upcoming Tasks */}
                 <Card3D style={styles.section} delay={700}>
@@ -1203,6 +1265,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: theme.colors.text.primary,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  myTasksBadge: {
+    backgroundColor: theme.colors.accent.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  myTasksBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  myTaskItem: {
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.accent.primary,
   },
 
   // Projects

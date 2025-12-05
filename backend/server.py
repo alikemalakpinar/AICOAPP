@@ -213,6 +213,16 @@ class TaskCreate(BaseModel):
     estimated_hours: Optional[float] = Field(None, ge=0, le=1000)
     parent_task_id: Optional[str] = None  # For subtasks
 
+class TaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=2, max_length=300)
+    description: Optional[str] = Field(None, max_length=5000)
+    status: Optional[str] = Field(None, pattern=r'^(todo|in_progress|review|done|cancelled)$')
+    priority: Optional[str] = Field(None, pattern=r'^(low|medium|high|critical)$')
+    assigned_to: Optional[str] = None
+    deadline: Optional[datetime] = None
+    tags: Optional[List[str]] = None
+    estimated_hours: Optional[float] = Field(None, ge=0, le=1000)
+
 class SubtaskCreate(BaseModel):
     title: str = Field(..., min_length=2, max_length=200)
     task_id: str
@@ -1168,33 +1178,62 @@ async def get_task(task_id: str, current_user: dict = Depends(get_current_user))
         f["_id"] = str(f["_id"])
     task["files"] = files
 
+    # Get assigned user info
+    if task.get("assigned_to"):
+        assigned_user = await db.users.find_one({"_id": ObjectId(task["assigned_to"])})
+        if assigned_user:
+            task["assigned_user"] = {
+                "_id": str(assigned_user["_id"]),
+                "full_name": assigned_user.get("full_name", ""),
+                "email": assigned_user.get("email", ""),
+                "avatar": assigned_user.get("avatar", "")
+            }
+
+    # Get project info
+    if task.get("project_id"):
+        project = await db.projects.find_one({"_id": ObjectId(task["project_id"])})
+        if project:
+            task["project_name"] = project.get("name", "")
+            task["project_color"] = project.get("color", "#3b82f6")
+
     return task
 
 @api_router.put("/tasks/{task_id}")
-async def update_task(task_id: str, task: TaskCreate, current_user: dict = Depends(get_current_user)):
+async def update_task(task_id: str, task: TaskUpdate, current_user: dict = Depends(get_current_user)):
     existing = await db.tasks.find_one({"_id": ObjectId(task_id)})
     if not existing:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    update_dict = {
-        "title": task.title,
-        "description": task.description,
-        "status": task.status,
-        "priority": task.priority,
-        "assigned_to": task.assigned_to,
-        "deadline": task.deadline,
-        "tags": task.tags,
-        "estimated_hours": task.estimated_hours,
-        "updated_at": datetime.utcnow()
-    }
+    # Build update dict with only provided fields
+    update_dict = {"updated_at": datetime.utcnow()}
+
+    if task.title is not None:
+        update_dict["title"] = task.title
+    if task.description is not None:
+        update_dict["description"] = task.description
+    if task.status is not None:
+        update_dict["status"] = task.status
+    if task.priority is not None:
+        update_dict["priority"] = task.priority
+    if task.assigned_to is not None:
+        update_dict["assigned_to"] = task.assigned_to
+    if task.deadline is not None:
+        update_dict["deadline"] = task.deadline
+    if task.tags is not None:
+        update_dict["tags"] = task.tags
+    if task.estimated_hours is not None:
+        update_dict["estimated_hours"] = task.estimated_hours
 
     await db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": update_dict})
 
     project = await db.projects.find_one({"_id": ObjectId(existing["project_id"])})
 
+    # Use provided title or existing title for activity log
+    task_title = task.title if task.title else existing.get("title", "")
+
     await log_activity(
         current_user["_id"], "updated", "task",
-        task_id, task.title, project["workspace_id"] if project else ""
+        task_id, task_title, project["workspace_id"] if project else ""
     )
 
     # Notify if assigned to someone new
@@ -1202,7 +1241,7 @@ async def update_task(task_id: str, task: TaskCreate, current_user: dict = Depen
         await send_notification(
             task.assigned_to,
             "Görev Ataması",
-            f"'{task.title}' görevi size atandı.",
+            f"'{task_title}' görevi size atandı.",
             "assignment"
         )
 
