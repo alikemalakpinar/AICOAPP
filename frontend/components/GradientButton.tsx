@@ -8,15 +8,18 @@ interface GradientButtonProps {
   title: string;
   loading?: boolean;
   disabled?: boolean;
-  colors?: string[];
+  colors?: readonly [string, string, ...string[]];
 }
+
+const defaultColors = ['#3b82f6', '#8b5cf6'] as const;
+const disabledColors = ['#4b5563', '#6b7280'] as const;
 
 export const GradientButton: React.FC<GradientButtonProps> = ({
   onPress,
   title,
   loading = false,
   disabled = false,
-  colors = ['#3b82f6', '#8b5cf6'],
+  colors = defaultColors,
 }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -31,7 +34,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
       activeOpacity={0.8}
     >
       <LinearGradient
-        colors={disabled ? ['#4b5563', '#6b7280'] : colors}
+        colors={disabled ? disabledColors : colors}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}

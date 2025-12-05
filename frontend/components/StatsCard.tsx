@@ -7,7 +7,7 @@ interface StatsCardProps {
   icon: keyof typeof Ionicons.glyphMap;
   value: number;
   label: string;
-  colors: string[];
+  colors: readonly [string, string, ...string[]];
   delay?: number;
 }
 

@@ -1,35 +1,64 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { View, StyleSheet, Text } from 'react-native';
+import LottieView from 'lottie-react-native';
+import { theme } from '../theme';
 
-export const LoadingAnimation = () => {
-  const spinValue = useRef(new Animated.Value(0)).current;
+interface LoadingAnimationProps {
+  size?: number;
+  message?: string;
+}
 
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
-
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
+export const LoadingAnimation = ({ size = 100, message }: LoadingAnimationProps) => {
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.circle, { transform: [{ rotate: spin }] }]}>
-        <LinearGradient
-          colors={['#3b82f6', '#8b5cf6', '#ec4899']}
-          style={styles.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-      </Animated.View>
+      <LottieView
+        source={require('../assets/animations/loading.json')}
+        autoPlay
+        loop
+        style={{ width: size, height: size }}
+      />
+      {message && <Text style={styles.message}>{message}</Text>}
+    </View>
+  );
+};
+
+export const SuccessAnimation = ({ size = 80, message }: LoadingAnimationProps) => {
+  return (
+    <View style={styles.container}>
+      <LottieView
+        source={require('../assets/animations/success.json')}
+        autoPlay
+        loop={false}
+        style={{ width: size, height: size }}
+      />
+      {message && <Text style={styles.successMessage}>{message}</Text>}
+    </View>
+  );
+};
+
+export const EmptyAnimation = ({ size = 120, message }: LoadingAnimationProps) => {
+  return (
+    <View style={styles.container}>
+      <LottieView
+        source={require('../assets/animations/empty.json')}
+        autoPlay
+        loop
+        style={{ width: size, height: size }}
+      />
+      {message && <Text style={styles.emptyMessage}>{message}</Text>}
+    </View>
+  );
+};
+
+export const RocketAnimation = ({ size = 100 }: { size?: number }) => {
+  return (
+    <View style={styles.container}>
+      <LottieView
+        source={require('../assets/animations/rocket.json')}
+        autoPlay
+        loop
+        style={{ width: size, height: size }}
+      />
     </View>
   );
 };
@@ -39,14 +68,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  circle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    overflow: 'hidden',
+  message: {
+    marginTop: 16,
+    fontSize: 14,
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
   },
-  gradient: {
-    width: '100%',
-    height: '100%',
+  successMessage: {
+    marginTop: 12,
+    fontSize: 14,
+    color: theme.colors.semantic.success,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  emptyMessage: {
+    marginTop: 16,
+    fontSize: 14,
+    color: theme.colors.text.muted,
+    textAlign: 'center',
   },
 });

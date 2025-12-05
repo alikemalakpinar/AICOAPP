@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../../theme';
+import LottieView from 'lottie-react-native';
 
 const { width } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
@@ -233,14 +234,22 @@ export default function Projects() {
           >
             {loading ? (
               <View style={styles.loadingContainer}>
-                <Animated.View style={styles.loadingSpinner}>
-                  <LinearGradient colors={theme.colors.gradients.primary} style={styles.loadingGradient} />
-                </Animated.View>
-                <Text style={styles.loadingText}>Yükleniyor...</Text>
+                <LottieView
+                  source={require('../../assets/animations/loading.json')}
+                  autoPlay
+                  loop
+                  style={{ width: 100, height: 100 }}
+                />
+                <Text style={styles.loadingText}>Yukleniyor...</Text>
               </View>
             ) : filteredProjects.length === 0 ? (
               <View style={styles.emptyListContainer}>
-                <Ionicons name="folder-open-outline" size={64} color={theme.colors.text.muted} />
+                <LottieView
+                  source={require('../../assets/animations/empty.json')}
+                  autoPlay
+                  loop
+                  style={{ width: 120, height: 120 }}
+                />
                 <Text style={styles.emptyListTitle}>Proje Bulunamadı</Text>
                 <Text style={styles.emptyListSubtitle}>
                   {searchQuery ? 'Arama kriterlerinize uygun proje yok' : 'İlk projenizi oluşturun'}

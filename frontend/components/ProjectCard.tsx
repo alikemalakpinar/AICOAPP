@@ -44,13 +44,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onPress, dela
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'not_started':
-        return { colors: ['#6b7280', '#4b5563'], label: 'Not Started', icon: 'time-outline' as const };
+        return { colors: ['#6b7280', '#4b5563'] as const, label: 'Not Started', icon: 'time-outline' as const };
       case 'in_progress':
-        return { colors: ['#3b82f6', '#2563eb'], label: 'In Progress', icon: 'rocket-outline' as const };
+        return { colors: ['#3b82f6', '#2563eb'] as const, label: 'In Progress', icon: 'rocket-outline' as const };
       case 'completed':
-        return { colors: ['#10b981', '#059669'], label: 'Completed', icon: 'checkmark-circle-outline' as const };
+        return { colors: ['#10b981', '#059669'] as const, label: 'Completed', icon: 'checkmark-circle-outline' as const };
       default:
-        return { colors: ['#6b7280', '#4b5563'], label: status, icon: 'help-circle-outline' as const };
+        return { colors: ['#6b7280', '#4b5563'] as const, label: status, icon: 'help-circle-outline' as const };
     }
   };
 

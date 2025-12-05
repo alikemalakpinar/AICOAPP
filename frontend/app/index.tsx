@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { View, StyleSheet, Animated, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import LottieView from 'lottie-react-native';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme';
 
@@ -13,7 +14,6 @@ export default function Index() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Entry animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -27,7 +27,6 @@ export default function Index() {
       }),
     ]).start();
 
-    // Pulse animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -46,14 +45,13 @@ export default function Index() {
 
   useEffect(() => {
     if (!loading) {
-      // Delay navigation for smooth transition
       setTimeout(() => {
         if (user) {
           router.replace('/(tabs)/dashboard');
         } else {
           router.replace('/(auth)/login');
         }
-      }, 500);
+      }, 800);
     }
   }, [user, loading]);
 
@@ -73,21 +71,19 @@ export default function Index() {
             >
               <Text style={styles.logoText}>A</Text>
             </LinearGradient>
+            {/* 3D Shadow */}
+            <View style={styles.logo3DShadow} />
           </Animated.View>
           <Text style={styles.appName}>AICO</Text>
-          <Text style={styles.tagline}>Proje Yönetimi</Text>
+          <Text style={styles.tagline}>Proje Yonetimi</Text>
 
           <View style={styles.loadingContainer}>
-            <View style={styles.loadingBar}>
-              <Animated.View style={[styles.loadingProgress, { opacity: pulseAnim }]}>
-                <LinearGradient
-                  colors={theme.gradients.primary}
-                  style={styles.loadingGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                />
-              </Animated.View>
-            </View>
+            <LottieView
+              source={require('../assets/animations/loading.json')}
+              autoPlay
+              loop
+              style={styles.lottie}
+            />
           </View>
         </Animated.View>
       </LinearGradient>
@@ -111,6 +107,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     marginBottom: 24,
+    position: 'relative',
   },
   logo: {
     width: 100,
@@ -119,6 +116,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...theme.shadows.glow,
+  },
+  logo3DShadow: {
+    position: 'absolute',
+    bottom: -8,
+    left: 15,
+    right: 15,
+    height: 15,
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderRadius: 30,
+    transform: [{ scaleY: 0.3 }],
   },
   logoText: {
     fontSize: 48,
@@ -138,22 +145,10 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   loadingContainer: {
-    width: '60%',
     alignItems: 'center',
   },
-  loadingBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: theme.colors.border.light,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  loadingProgress: {
-    width: '100%',
-    height: '100%',
-  },
-  loadingGradient: {
-    width: '100%',
-    height: '100%',
+  lottie: {
+    width: 80,
+    height: 80,
   },
 });
