@@ -52,42 +52,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
-      const { token: newToken, user: newUser } = response.data;
-      
-      await AsyncStorage.setItem('token', newToken);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      
-      setToken(newToken);
-      setUser(newUser);
-      
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.detail || 'Login failed');
+  try {
+    const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+
+    const accessToken = response.data.access_token;   // 🔥 backend field
+    const refreshToken = response.data.refresh_token; // 🔥 backend field
+    const newUser = response.data.user;
+
+    if (!accessToken || !newUser) {
+      throw new Error("Invalid login response");
     }
-  };
+
+    await AsyncStorage.setItem('token', accessToken);
+    await AsyncStorage.setItem('refresh_token', refreshToken);
+    await AsyncStorage.setItem('user', JSON.stringify(newUser));
+
+    setToken(accessToken);
+    setUser(newUser);
+
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Login failed');
+  }
+};
+
 
   const signup = async (email: string, password: string, full_name: string) => {
-    try {
-      const response = await axios.post(`${API_URL}/auth/signup`, {
-        email,
-        password,
-        full_name,
-      });
-      const { token: newToken, user: newUser } = response.data;
-      
-      await AsyncStorage.setItem('token', newToken);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      
-      setToken(newToken);
-      setUser(newUser);
-      
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.detail || 'Signup failed');
-    }
-  };
+  try {
+    const response = await axios.post(`${API_URL}/auth/signup`, {
+      email,
+      password,
+      full_name,
+    });
+
+    const accessToken = response.data.access_token;
+    const refreshToken = response.data.refresh_token;
+    const newUser = response.data.user;
+
+    await AsyncStorage.setItem('token', accessToken);
+    await AsyncStorage.setItem('refresh_token', refreshToken);
+    await AsyncStorage.setItem('user', JSON.stringify(newUser));
+
+    setToken(accessToken);
+    setUser(newUser);
+
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Signup failed');
+  }
+};
+
 
   const logout = async () => {
     await AsyncStorage.removeItem('token');
