@@ -18,6 +18,8 @@ import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../../theme';
+import { SkeletonListLoader } from '../../components/SkeletonLoader';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
 
@@ -39,6 +41,7 @@ export default function Team() {
   const [modalVisible, setModalVisible] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -126,8 +129,8 @@ export default function Team() {
   };
 
   const filteredMembers = members.filter((member) =>
-    member.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchQuery.toLowerCase())
+    member.full_name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    member.email.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   if (!currentWorkspace) {
@@ -217,12 +220,7 @@ export default function Team() {
             }
           >
             {loading ? (
-              <View style={styles.loadingContainer}>
-                <Animated.View style={styles.loadingSpinner}>
-                  <LinearGradient colors={theme.colors.gradients.primary} style={styles.loadingGradient} />
-                </Animated.View>
-                <Text style={styles.loadingText}>Yükleniyor...</Text>
-              </View>
+              <SkeletonListLoader count={5} type="member" />
             ) : filteredMembers.length === 0 ? (
               <View style={styles.emptyListContainer}>
                 <Ionicons name="people-outline" size={64} color={theme.colors.text.muted} />

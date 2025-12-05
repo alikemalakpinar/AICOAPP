@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 import { useWorkspaceStore } from '../stores/workspaceStore';
 import { theme } from '../theme';
+import { SkeletonAnalytics } from '../components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
@@ -330,6 +331,10 @@ export default function Analytics() {
               />
             }
           >
+            {loading ? (
+              <SkeletonAnalytics />
+            ) : (
+            <>
             {/* Period Selector */}
             <Animated.View
               style={[styles.periodSelector, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
@@ -465,6 +470,8 @@ export default function Analytics() {
             </Animated.View>
 
             <View style={{ height: 40 }} />
+            </>
+            )}
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
