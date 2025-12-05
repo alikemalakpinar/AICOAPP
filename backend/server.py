@@ -257,7 +257,7 @@ class RequestCreate(BaseModel):
     description: Optional[str] = Field(None, max_length=5000)
     workspace_id: str
     priority: str = Field("medium", pattern=r'^(low|medium|high|critical)$')
-    category: str = Field("general", pattern=r'^(general|bug|feature|support|urgent)$')
+    category: str = Field("general", pattern=r'^(general|bug|feature|support|urgent|technical)$')
     deadline: Optional[datetime] = None
     tags: List[str] = []
 
@@ -905,6 +905,39 @@ async def invite_member(workspace_id: str, invite: InviteMember, current_user: d
     )
 
     return {"message": "Member invited successfully"}
+
+@api_router.get("/workspaces/{workspace_id}/members")
+async def get_workspace_members(workspace_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all members of a workspace with their details"""
+    workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+
+    if current_user["_id"] not in workspace["member_ids"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    members = []
+    member_roles = workspace.get("member_roles", {})
+
+    for member_id in workspace["member_ids"]:
+        try:
+            user = await db.users.find_one({"_id": ObjectId(member_id)})
+            if user:
+                role = "owner" if workspace["owner_id"] == member_id else member_roles.get(member_id, "member")
+                members.append({
+                    "_id": str(user["_id"]),
+                    "user_id": str(user["_id"]),
+                    "full_name": user.get("full_name", ""),
+                    "email": user.get("email", ""),
+                    "avatar": user.get("avatar"),
+                    "role": role,
+                    "joined_at": user.get("created_at", datetime.utcnow()).isoformat() if isinstance(user.get("created_at"), datetime) else str(user.get("created_at", ""))
+                })
+        except Exception as e:
+            logger.error(f"Error fetching member {member_id}: {e}")
+            continue
+
+    return members
 
 @api_router.delete("/workspaces/{workspace_id}/members/{member_id}")
 async def remove_member(workspace_id: str, member_id: str, current_user: dict = Depends(get_current_user)):
