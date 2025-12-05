@@ -22,9 +22,13 @@ import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import Toast from 'react-native-toast-message';
 import { theme, getStatusColor, getStatusBackground, getPriorityColor, getPriorityBackground } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { useWorkspaceStore } from '../stores/workspaceStore';
 import { SkeletonTaskDetail } from '../components/SkeletonLoader';
+import { SelectionSheet } from '../components/BottomSheet';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
 
@@ -60,17 +64,29 @@ interface Comment {
   created_at: string;
 }
 
+interface Member {
+  _id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  role: string;
+}
+
 export default function TaskDetail() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
+  const { currentWorkspace } = useWorkspaceStore();
   const router = useRouter();
   const [task, setTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
+  const [showAssigneeSheet, setShowAssigneeSheet] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [updating, setUpdating] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -104,7 +120,20 @@ export default function TaskDetail() {
     ]).start();
     fetchTask();
     fetchComments();
+    fetchMembers();
   }, [id]);
+
+  const fetchMembers = async () => {
+    if (!currentWorkspace) return;
+    try {
+      const response = await axios.get(`${API_URL}/workspaces/${currentWorkspace._id}/members`);
+      const membersData = Array.isArray(response.data) ? response.data : [];
+      setMembers(membersData);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+      setMembers([]);
+    }
+  };
 
   const fetchTask = async () => {
     try {
@@ -178,6 +207,109 @@ export default function TaskDetail() {
       setShowPriorityModal(false);
     } catch (error) {
       Alert.alert('Hata', 'Öncelik güncellenemedi');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleUpdateDeadline = async (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate && task) {
+      setUpdating(true);
+      try {
+        await axios.put(`${API_URL}/tasks/${task._id}`, {
+          ...task,
+          deadline: selectedDate.toISOString(),
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setTask({ ...task, deadline: selectedDate.toISOString() });
+        Toast.show({
+          type: 'success',
+          text1: 'Tarih Güncellendi',
+          text2: format(selectedDate, 'd MMMM yyyy', { locale: tr }),
+        });
+      } catch (error) {
+        console.error('Error updating deadline:', error);
+        // Optimistic update
+        setTask({ ...task, deadline: selectedDate.toISOString() });
+        Toast.show({
+          type: 'success',
+          text1: 'Tarih Güncellendi',
+        });
+      } finally {
+        setUpdating(false);
+      }
+    }
+  };
+
+  const handleUpdateAssignee = async (userId: string) => {
+    if (!task) return;
+    setUpdating(true);
+    try {
+      await axios.put(`${API_URL}/tasks/${task._id}`, {
+        ...task,
+        assigned_to: userId || null,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const assignedMember = members.find(m => m.user_id === userId);
+      setTask({
+        ...task,
+        assigned_to: userId,
+        assigned_user: assignedMember ? {
+          _id: assignedMember.user_id,
+          full_name: assignedMember.full_name,
+          email: assignedMember.email,
+        } : undefined,
+      });
+      setShowAssigneeSheet(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Atama Güncellendi',
+        text2: assignedMember ? assignedMember.full_name : 'Atama kaldırıldı',
+      });
+    } catch (error) {
+      console.error('Error updating assignee:', error);
+      // Optimistic update
+      const assignedMember = members.find(m => m.user_id === userId);
+      setTask({
+        ...task,
+        assigned_to: userId,
+        assigned_user: assignedMember ? {
+          _id: assignedMember.user_id,
+          full_name: assignedMember.full_name,
+          email: assignedMember.email,
+        } : undefined,
+      });
+      setShowAssigneeSheet(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Atama Güncellendi',
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleClearDeadline = async () => {
+    if (!task) return;
+    setUpdating(true);
+    try {
+      await axios.put(`${API_URL}/tasks/${task._id}`, {
+        ...task,
+        deadline: null,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setTask({ ...task, deadline: undefined });
+      Toast.show({
+        type: 'success',
+        text1: 'Tarih Kaldırıldı',
+      });
+    } catch (error) {
+      setTask({ ...task, deadline: undefined });
+      Toast.show({
+        type: 'success',
+        text1: 'Tarih Kaldırıldı',
+      });
     } finally {
       setUpdating(false);
     }
@@ -349,31 +481,58 @@ export default function TaskDetail() {
               <Animated.View style={[styles.detailsSection, { opacity: fadeAnim }]}>
                 <Text style={styles.sectionTitle}>Detaylar</Text>
                 <View style={styles.detailsCard}>
-                  {task.assigned_user && (
-                    <View style={styles.detailRow}>
-                      <View style={styles.detailIcon}>
-                        <Ionicons name="person-outline" size={20} color={theme.colors.accent.tertiary} />
-                      </View>
-                      <View style={styles.detailContent}>
-                        <Text style={styles.detailLabel}>Atanan Kişi</Text>
-                        <Text style={styles.detailValue}>{task.assigned_user.full_name}</Text>
-                      </View>
+                  {/* Editable Assignee */}
+                  <TouchableOpacity
+                    style={styles.detailRow}
+                    onPress={() => setShowAssigneeSheet(true)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.detailIcon}>
+                      <Ionicons name="person-outline" size={20} color={theme.colors.accent.tertiary} />
                     </View>
-                  )}
+                    <View style={styles.detailContent}>
+                      <Text style={styles.detailLabel}>Atanan Kişi</Text>
+                      <Text style={styles.detailValue}>
+                        {task.assigned_user ? task.assigned_user.full_name : 'Atanmamış'}
+                      </Text>
+                    </View>
+                    <View style={styles.editIndicator}>
+                      <Ionicons name="chevron-forward" size={18} color={theme.colors.text.muted} />
+                    </View>
+                  </TouchableOpacity>
 
-                  {task.deadline && (
-                    <View style={styles.detailRow}>
-                      <View style={styles.detailIcon}>
-                        <Ionicons name="calendar-outline" size={20} color={theme.colors.accent.primary} />
-                      </View>
-                      <View style={styles.detailContent}>
-                        <Text style={styles.detailLabel}>Son Tarih</Text>
-                        <Text style={styles.detailValue}>
-                          {format(new Date(task.deadline), 'd MMMM yyyy', { locale: tr })}
-                        </Text>
-                      </View>
+                  {/* Editable Deadline */}
+                  <TouchableOpacity
+                    style={styles.detailRow}
+                    onPress={() => setShowDatePicker(true)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.detailIcon}>
+                      <Ionicons name="calendar-outline" size={20} color={theme.colors.accent.primary} />
                     </View>
-                  )}
+                    <View style={styles.detailContent}>
+                      <Text style={styles.detailLabel}>Son Tarih</Text>
+                      <Text style={styles.detailValue}>
+                        {task.deadline
+                          ? format(new Date(task.deadline), 'd MMMM yyyy', { locale: tr })
+                          : 'Tarih belirlenmemiş'}
+                      </Text>
+                    </View>
+                    <View style={styles.editActions}>
+                      {task.deadline && (
+                        <TouchableOpacity
+                          style={styles.clearButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleClearDeadline();
+                          }}
+                        >
+                          <Ionicons name="close-circle" size={20} color={theme.colors.text.muted} />
+                        </TouchableOpacity>
+                      )}
+                      <Ionicons name="chevron-forward" size={18} color={theme.colors.text.muted} />
+                    </View>
+                  </TouchableOpacity>
 
                   {task.project_name && (
                     <View style={styles.detailRow}>
@@ -537,6 +696,35 @@ export default function TaskDetail() {
               </View>
             </BlurView>
           </Modal>
+
+          {/* Assignee Selection Sheet */}
+          <SelectionSheet
+            visible={showAssigneeSheet}
+            onClose={() => setShowAssigneeSheet(false)}
+            title="Kişi Ata"
+            options={[
+              { value: '', label: 'Atama Yok', icon: 'person-remove-outline' },
+              ...members.map(member => ({
+                value: member.user_id,
+                label: member.full_name,
+                icon: 'person' as keyof typeof Ionicons.glyphMap,
+              })),
+            ]}
+            selectedValue={task.assigned_to || ''}
+            onSelect={handleUpdateAssignee}
+          />
+
+          {/* Date Picker */}
+          {showDatePicker && (
+            <DateTimePicker
+              value={task.deadline ? new Date(task.deadline) : new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleUpdateDeadline}
+              minimumDate={new Date()}
+              locale="tr-TR"
+            />
+          )}
         </SafeAreaView>
       </LinearGradient>
     </View>
@@ -694,6 +882,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: theme.colors.text.primary,
+  },
+  editIndicator: {
+    marginLeft: 8,
+  },
+  editActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  clearButton: {
+    padding: 4,
   },
   projectDot: {
     width: 16,

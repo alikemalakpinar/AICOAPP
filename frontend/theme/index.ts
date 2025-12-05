@@ -1,114 +1,122 @@
-// Professional Dark Theme - AICO Project Management
-// Clean, minimal, business-focused design
+// Professional Corporate Dark Theme - AICO Project Management
+// Clean, minimal, enterprise-focused design with neutral tones
 
 export const theme = {
   colors: {
-    // Background colors - Refined dark tones
+    // Background colors - Sophisticated dark neutrals
     background: {
-      primary: '#0f1117',
-      secondary: '#161921',
-      tertiary: '#1c1f2a',
-      card: '#1e2230',
-      cardSolid: '#1e2230',
-      cardHover: '#252a3a',
-      elevated: '#262b3d',
-      input: '#1a1d27',
-      overlay: 'rgba(0, 0, 0, 0.7)',
+      primary: '#0a0b0d',
+      secondary: '#111214',
+      tertiary: '#18191c',
+      card: '#1c1d21',
+      cardSolid: '#1c1d21',
+      cardHover: '#222428',
+      elevated: '#26282c',
+      input: '#151618',
+      overlay: 'rgba(0, 0, 0, 0.75)',
+      glass: 'rgba(28, 29, 33, 0.85)',
     },
-    // Text colors - Clear hierarchy
+    // Text colors - Clear hierarchy with warm neutrals
     text: {
-      primary: '#f8fafc',
-      secondary: '#94a3b8',
-      tertiary: '#64748b',
-      muted: '#64748b',
-      disabled: '#475569',
-      inverse: '#0f1117',
+      primary: '#f4f4f5',
+      secondary: '#a1a1aa',
+      tertiary: '#71717a',
+      muted: '#52525b',
+      disabled: '#3f3f46',
+      inverse: '#09090b',
       link: '#60a5fa',
     },
-    // Accent colors - Professional Blue palette
+    // Accent colors - Professional Slate Blue palette
     accent: {
-      primary: '#3b82f6',
-      primaryLight: '#60a5fa',
-      primaryDark: '#2563eb',
-      secondary: '#6366f1',
-      secondaryLight: '#818cf8',
-      tertiary: '#8b5cf6',
-      hover: '#4f8ff7',
-      muted: 'rgba(59, 130, 246, 0.15)',
-      // Backwards compatibility aliases
-      success: '#22c55e',
+      primary: '#6366f1',
+      primaryLight: '#818cf8',
+      primaryDark: '#4f46e5',
+      secondary: '#8b5cf6',
+      secondaryLight: '#a78bfa',
+      tertiary: '#06b6d4',
+      hover: '#7c7cf8',
+      muted: 'rgba(99, 102, 241, 0.15)',
+      // Backwards compatibility
+      success: '#10b981',
       error: '#ef4444',
       warning: '#f59e0b',
       info: '#06b6d4',
     },
-    // Semantic colors - Functional, not decorative
+    // Semantic colors - Muted, professional tones
     semantic: {
-      success: '#22c55e',
-      successMuted: 'rgba(34, 197, 94, 0.15)',
+      success: '#10b981',
+      successMuted: 'rgba(16, 185, 129, 0.12)',
       warning: '#f59e0b',
-      warningMuted: 'rgba(245, 158, 11, 0.15)',
+      warningMuted: 'rgba(245, 158, 11, 0.12)',
       error: '#ef4444',
-      errorMuted: 'rgba(239, 68, 68, 0.15)',
+      errorMuted: 'rgba(239, 68, 68, 0.12)',
       info: '#06b6d4',
-      infoMuted: 'rgba(6, 182, 212, 0.15)',
+      infoMuted: 'rgba(6, 182, 212, 0.12)',
     },
-    // Border colors
+    // Border colors - Subtle definition
     border: {
-      primary: '#2d3548',
-      light: '#2d3548',
-      medium: '#3d4660',
-      strong: '#4d5a78',
-      focus: '#3b82f6',
+      primary: '#27272a',
+      light: '#27272a',
+      medium: '#3f3f46',
+      strong: '#52525b',
+      focus: '#6366f1',
     },
-    // Status colors - Clear and distinct
+    // Status colors - Professional and distinct
     status: {
-      todo: '#64748b',
-      todoBackground: 'rgba(100, 116, 139, 0.12)',
-      inProgress: '#3b82f6',
-      inProgressBackground: 'rgba(59, 130, 246, 0.12)',
-      done: '#22c55e',
-      doneBackground: 'rgba(34, 197, 94, 0.12)',
+      todo: '#71717a',
+      todoBackground: 'rgba(113, 113, 122, 0.10)',
+      inProgress: '#6366f1',
+      inProgressBackground: 'rgba(99, 102, 241, 0.10)',
+      done: '#10b981',
+      doneBackground: 'rgba(16, 185, 129, 0.10)',
       pending: '#f59e0b',
-      pendingBackground: 'rgba(245, 158, 11, 0.12)',
+      pendingBackground: 'rgba(245, 158, 11, 0.10)',
       cancelled: '#ef4444',
-      cancelledBackground: 'rgba(239, 68, 68, 0.12)',
+      cancelledBackground: 'rgba(239, 68, 68, 0.10)',
       onHold: '#8b5cf6',
-      onHoldBackground: 'rgba(139, 92, 246, 0.12)',
+      onHoldBackground: 'rgba(139, 92, 246, 0.10)',
+      review: '#06b6d4',
+      reviewBackground: 'rgba(6, 182, 212, 0.10)',
     },
-    // Priority colors
+    // Priority colors - Clear urgency levels
     priority: {
-      low: '#22c55e',
-      lowBackground: 'rgba(34, 197, 94, 0.12)',
+      low: '#10b981',
+      lowBackground: 'rgba(16, 185, 129, 0.10)',
       medium: '#f59e0b',
-      mediumBackground: 'rgba(245, 158, 11, 0.12)',
-      high: '#ef4444',
-      highBackground: 'rgba(239, 68, 68, 0.12)',
-      urgent: '#dc2626',
-      urgentBackground: 'rgba(220, 38, 38, 0.15)',
+      mediumBackground: 'rgba(245, 158, 11, 0.10)',
+      high: '#f97316',
+      highBackground: 'rgba(249, 115, 22, 0.10)',
+      critical: '#ef4444',
+      criticalBackground: 'rgba(239, 68, 68, 0.12)',
+      urgent: '#ef4444',
+      urgentBackground: 'rgba(239, 68, 68, 0.12)',
     },
-    // Tag colors for categorization
+    // Tag colors - Muted professional tones
     tags: {
-      blue: { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa' },
-      green: { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' },
-      yellow: { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24' },
-      red: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171' },
-      purple: { bg: 'rgba(139, 92, 246, 0.15)', text: '#a78bfa' },
-      pink: { bg: 'rgba(236, 72, 153, 0.15)', text: '#f472b6' },
-      cyan: { bg: 'rgba(6, 182, 212, 0.15)', text: '#22d3ee' },
-      gray: { bg: 'rgba(100, 116, 139, 0.15)', text: '#94a3b8' },
+      blue: { bg: 'rgba(99, 102, 241, 0.12)', text: '#818cf8' },
+      green: { bg: 'rgba(16, 185, 129, 0.12)', text: '#34d399' },
+      yellow: { bg: 'rgba(245, 158, 11, 0.12)', text: '#fbbf24' },
+      red: { bg: 'rgba(239, 68, 68, 0.12)', text: '#f87171' },
+      purple: { bg: 'rgba(139, 92, 246, 0.12)', text: '#a78bfa' },
+      pink: { bg: 'rgba(236, 72, 153, 0.12)', text: '#f472b6' },
+      cyan: { bg: 'rgba(6, 182, 212, 0.12)', text: '#22d3ee' },
+      gray: { bg: 'rgba(113, 113, 122, 0.12)', text: '#a1a1aa' },
+      indigo: { bg: 'rgba(99, 102, 241, 0.12)', text: '#a5b4fc' },
     },
-    // Gradients inside colors for backwards compatibility
+    // Gradients - Subtle, professional
     gradients: {
-      primary: ['#3b82f6', '#2563eb'] as const,
-      primaryVibrant: ['#3b82f6', '#1d4ed8'] as const,
-      secondary: ['#6366f1', '#4f46e5'] as const,
-      success: ['#22c55e', '#16a34a'] as const,
+      primary: ['#6366f1', '#4f46e5'] as const,
+      primaryVibrant: ['#818cf8', '#6366f1'] as const,
+      secondary: ['#8b5cf6', '#7c3aed'] as const,
+      success: ['#10b981', '#059669'] as const,
       warning: ['#f59e0b', '#d97706'] as const,
       error: ['#ef4444', '#dc2626'] as const,
       info: ['#06b6d4', '#0891b2'] as const,
-      tertiary: ['#8b5cf6', '#7c3aed'] as const,
-      dark: ['#1e2230', '#0f1117'] as const,
+      tertiary: ['#06b6d4', '#0891b2'] as const,
+      dark: ['#1c1d21', '#0a0b0d'] as const,
       premium: ['#f59e0b', '#d97706'] as const,
+      neutral: ['#3f3f46', '#27272a'] as const,
+      glass: ['rgba(28, 29, 33, 0.9)', 'rgba(10, 11, 13, 0.95)'] as const,
     },
   },
   spacing: {
@@ -195,42 +203,42 @@ export const theme = {
     sm: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
+      shadowOpacity: 0.25,
       shadowRadius: 3,
       elevation: 2,
     },
     md: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.25,
+      shadowOpacity: 0.3,
       shadowRadius: 6,
       elevation: 4,
     },
     lg: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.35,
       shadowRadius: 12,
       elevation: 8,
     },
     xl: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.35,
+      shadowOpacity: 0.4,
       shadowRadius: 20,
       elevation: 12,
     },
     focus: {
-      shadowColor: '#3b82f6',
+      shadowColor: '#6366f1',
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.25,
       shadowRadius: 8,
       elevation: 4,
     },
     glow: {
-      shadowColor: '#3b82f6',
+      shadowColor: '#6366f1',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
+      shadowOpacity: 0.35,
       shadowRadius: 16,
       elevation: 8,
     },
@@ -247,15 +255,23 @@ export const theme = {
       friction: 6,
       tension: 50,
     },
+    springGentle: {
+      friction: 10,
+      tension: 30,
+    },
   },
-  // Gradients - Professional, subtle gradients
+  // Top-level gradients for backwards compatibility
   gradients: {
-    primary: ['#3b82f6', '#2563eb'] as const,
-    primaryVibrant: ['#3b82f6', '#1d4ed8'] as const,
-    success: ['#22c55e', '#16a34a'] as const,
+    primary: ['#6366f1', '#4f46e5'] as const,
+    primaryVibrant: ['#818cf8', '#6366f1'] as const,
+    secondary: ['#8b5cf6', '#7c3aed'] as const,
+    success: ['#10b981', '#059669'] as const,
     warning: ['#f59e0b', '#d97706'] as const,
     error: ['#ef4444', '#dc2626'] as const,
-    dark: ['#1e2230', '#0f1117'] as const,
+    info: ['#06b6d4', '#0891b2'] as const,
+    tertiary: ['#06b6d4', '#0891b2'] as const,
+    dark: ['#1c1d21', '#0a0b0d'] as const,
+    neutral: ['#3f3f46', '#27272a'] as const,
   },
 };
 
@@ -273,6 +289,7 @@ export const getStatusColor = (status: string) => {
     'cancelled': theme.colors.status.cancelled,
     'rejected': theme.colors.status.cancelled,
     'on_hold': theme.colors.status.onHold,
+    'review': theme.colors.status.review,
   };
   return statusMap[status] || theme.colors.text.muted;
 };
@@ -290,6 +307,7 @@ export const getStatusBackground = (status: string) => {
     'cancelled': theme.colors.status.cancelledBackground,
     'rejected': theme.colors.status.cancelledBackground,
     'on_hold': theme.colors.status.onHoldBackground,
+    'review': theme.colors.status.reviewBackground,
   };
   return statusMap[status] || 'rgba(255, 255, 255, 0.05)';
 };
@@ -307,6 +325,7 @@ export const getStatusLabel = (status: string) => {
     'cancelled': 'İptal Edildi',
     'rejected': 'Reddedildi',
     'on_hold': 'Bekletiliyor',
+    'review': 'İnceleniyor',
   };
   return statusMap[status] || status;
 };
@@ -316,6 +335,7 @@ export const getPriorityColor = (priority: string) => {
     'low': theme.colors.priority.low,
     'medium': theme.colors.priority.medium,
     'high': theme.colors.priority.high,
+    'critical': theme.colors.priority.critical,
     'urgent': theme.colors.priority.urgent,
   };
   return priorityMap[priority] || theme.colors.text.muted;
@@ -326,6 +346,7 @@ export const getPriorityBackground = (priority: string) => {
     'low': theme.colors.priority.lowBackground,
     'medium': theme.colors.priority.mediumBackground,
     'high': theme.colors.priority.highBackground,
+    'critical': theme.colors.priority.criticalBackground,
     'urgent': theme.colors.priority.urgentBackground,
   };
   return priorityMap[priority] || 'rgba(255, 255, 255, 0.05)';
@@ -336,6 +357,7 @@ export const getPriorityLabel = (priority: string) => {
     'low': 'Düşük',
     'medium': 'Orta',
     'high': 'Yüksek',
+    'critical': 'Kritik',
     'urgent': 'Acil',
   };
   return priorityMap[priority] || priority;
