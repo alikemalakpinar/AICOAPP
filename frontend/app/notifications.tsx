@@ -201,7 +201,9 @@ export default function Notifications() {
   const fetchNotifications = async () => {
     try {
       const response = await axios.get(`${API_URL}/notifications`);
-      setNotifications(response.data);
+      // Ensure response.data is always an array
+      const data = Array.isArray(response.data) ? response.data : [];
+      setNotifications(data);
     } catch (error) {
       console.error('Error:', error);
       // Demo data for showcase

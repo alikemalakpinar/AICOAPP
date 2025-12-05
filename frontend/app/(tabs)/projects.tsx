@@ -73,9 +73,11 @@ export default function Projects() {
     if (!currentWorkspace) return;
     try {
       const response = await axios.get(`${API_URL}/projects?workspace_id=${currentWorkspace._id}`);
-      setProjects(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setProjects(data);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      setProjects([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

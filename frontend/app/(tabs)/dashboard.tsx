@@ -290,11 +290,20 @@ export default function Dashboard() {
         axios.get(`${API_URL}/tasks?workspace_id=${currentWorkspace._id}`),
         axios.get(`${API_URL}/projects?workspace_id=${currentWorkspace._id}`),
       ]);
-      setStats(statsResponse.data);
-      setTasks(tasksResponse.data);
-      setProjects(projectsResponse.data);
+      // Validate and set stats
+      setStats(statsResponse.data || null);
+      // Validate and set tasks array
+      const tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : [];
+      setTasks(tasksData);
+      // Validate and set projects array
+      const projectsData = Array.isArray(projectsResponse.data) ? projectsResponse.data : [];
+      setProjects(projectsData);
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Set empty defaults on error
+      setStats(null);
+      setTasks([]);
+      setProjects([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

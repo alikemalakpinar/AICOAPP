@@ -74,9 +74,11 @@ export default function Workspaces() {
   const fetchWorkspaces = async () => {
     try {
       const response = await axios.get(`${API_URL}/workspaces`);
-      setWorkspaces(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setWorkspaces(data);
     } catch (error) {
       console.error('Error fetching workspaces:', error);
+      setWorkspaces([]);
     } finally {
       setLoading(false);
     }

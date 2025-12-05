@@ -63,9 +63,11 @@ export default function Team() {
     if (!currentWorkspace) return;
     try {
       const response = await axios.get(`${API_URL}/team?workspace_id=${currentWorkspace._id}`);
-      setMembers(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setMembers(data);
     } catch (error) {
       console.error('Error fetching team:', error);
+      setMembers([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
