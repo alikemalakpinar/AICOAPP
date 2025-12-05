@@ -70,9 +70,12 @@ export default function Requests() {
     if (!currentWorkspace) return;
     try {
       const response = await axios.get(`${API_URL}/requests?workspace_id=${currentWorkspace._id}`);
-      setRequests(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setRequests(data);
     } catch (error) {
       console.error('Error fetching requests:', error);
+      // Keep existing data or set empty array
+      setRequests([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
