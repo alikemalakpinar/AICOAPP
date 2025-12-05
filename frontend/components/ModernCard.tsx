@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 interface ModernCardProps {
   children: React.ReactNode;
-  colors?: string[];
+  colors?: readonly [string, string, ...string[]];
   style?: ViewStyle;
 }
 
@@ -13,7 +13,7 @@ export const ModernCard: React.FC<ModernCardProps> = ({ children, colors, style 
     return (
       <View style={[styles.container, style]}>
         <LinearGradient
-          colors={colors}
+          colors={colors as readonly [string, string, ...string[]]}
           style={styles.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}

@@ -8,7 +8,6 @@ import {
   RefreshControl,
   Animated,
   Dimensions,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -21,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { format, addDays, startOfWeek, isSameDay, isToday } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { theme } from '../../theme';
+import LottieView from 'lottie-react-native';
 
 const { width } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
@@ -81,7 +81,172 @@ interface Project {
   };
 }
 
-const HOURS = Array.from({ length: 10 }, (_, i) => i + 9); // 9am to 6pm
+const HOURS = Array.from({ length: 10 }, (_, i) => i + 9);
+
+// 3D Card Component
+const Card3D = ({ children, style, delay = 0 }: { children: React.ReactNode; style?: any; delay?: number }) => {
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(30)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        style,
+        {
+          opacity,
+          transform: [
+            { scale: scaleAnim },
+            { translateY },
+            { perspective: 1000 },
+          ],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+};
+
+// Animated Stat Card
+const AnimatedStatCard = ({
+  icon,
+  value,
+  label,
+  gradient,
+  onPress,
+  delay = 0
+}: {
+  icon: string;
+  value: number;
+  label: string;
+  gradient: readonly [string, string, ...string[]];
+  onPress?: () => void;
+  delay?: number;
+}) => {
+  const countAnim = useRef(new Animated.Value(0)).current;
+  const [displayValue, setDisplayValue] = useState(0);
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 50,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Animate counter
+    const duration = 1000;
+    const startTime = Date.now();
+    const animate = () => {
+      const now = Date.now();
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(Math.round(value * eased));
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    setTimeout(animate, delay);
+  }, [value, delay]);
+
+  return (
+    <Animated.View style={[styles.statCard, { transform: [{ scale: scaleAnim }] }]}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+        <LinearGradient colors={gradient} style={styles.statCardGradient}>
+          <View style={styles.statCardIcon}>
+            <Ionicons name={icon as any} size={24} color="#fff" />
+          </View>
+          <Text style={styles.statCardValue}>{displayValue}</Text>
+          <Text style={styles.statCardLabel}>{label}</Text>
+          {/* 3D Effect Shadow */}
+          <View style={styles.card3DShadow} />
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// Progress Ring Component
+const ProgressRing = ({ progress, size = 100 }: { progress: number; size?: number }) => {
+  const animatedProgress = useRef(new Animated.Value(0)).current;
+  const [displayProgress, setDisplayProgress] = useState(0);
+
+  useEffect(() => {
+    const duration = 1500;
+    const startTime = Date.now();
+    const animate = () => {
+      const now = Date.now();
+      const p = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplayProgress(Math.round(progress * eased));
+      if (p < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    setTimeout(animate, 300);
+  }, [progress]);
+
+  const strokeDasharray = size * Math.PI * 0.8;
+  const strokeDashoffset = strokeDasharray * (1 - displayProgress / 100);
+
+  return (
+    <View style={[styles.progressRingContainer, { width: size, height: size }]}>
+      {/* Background Circle */}
+      <View style={[styles.progressRingBg, { width: size, height: size, borderRadius: size / 2 }]} />
+      {/* Progress Circle - Using View with border for simplicity */}
+      <View style={[styles.progressRingFg, {
+        width: size - 16,
+        height: size - 16,
+        borderRadius: (size - 16) / 2,
+        borderWidth: 8,
+        borderColor: theme.colors.accent.primary,
+        borderRightColor: 'transparent',
+        borderBottomColor: 'transparent',
+        transform: [{ rotate: `${displayProgress * 3.6 - 45}deg` }],
+      }]} />
+      {/* Inner Circle */}
+      <View style={[styles.progressRingInner, {
+        width: size - 24,
+        height: size - 24,
+        borderRadius: (size - 24) / 2
+      }]}>
+        <Text style={styles.progressRingText}>{displayProgress}%</Text>
+      </View>
+      {/* 3D Shadow */}
+      <View style={[styles.progressRing3DShadow, { width: size * 0.8, left: size * 0.1 }]} />
+    </View>
+  );
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -97,9 +262,7 @@ export default function Dashboard() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
 
-  // Get week days
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -112,12 +275,6 @@ export default function Dashboard() {
       }),
       Animated.spring(slideAnim, {
         toValue: 0,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
         friction: 8,
         tension: 40,
         useNativeDriver: true,
@@ -176,41 +333,40 @@ export default function Dashboard() {
     }
   };
 
-  // Calculate completion percentage
   const completionPercentage = stats
     ? Math.round((stats.completed_tasks / Math.max(stats.total_tasks, 1)) * 100)
     : 0;
 
-  // Get today's tasks
   const todayTasks = tasks.filter(task => {
     if (!task.deadline) return false;
     return isSameDay(new Date(task.deadline), selectedDate);
   });
 
-  // Get upcoming tasks
   const upcomingTasks = tasks
     .filter(task => task.status !== 'done')
     .slice(0, 5);
 
+  // Empty Workspace State
   if (!currentWorkspace) {
     return (
       <View style={styles.container}>
         <LinearGradient colors={[theme.colors.background.primary, theme.colors.background.secondary]} style={styles.gradient}>
           <SafeAreaView style={styles.safeArea}>
             <View style={styles.emptyContainer}>
-              <View style={styles.emptyIconContainer}>
-                <LinearGradient colors={theme.colors.gradients.primary} style={styles.emptyIconGradient}>
-                  <Ionicons name="briefcase-outline" size={48} color={theme.colors.text.primary} />
-                </LinearGradient>
-              </View>
-              <Text style={styles.emptyTitle}>Çalışma Alanı Seçilmedi</Text>
-              <Text style={styles.emptySubtitle}>Başlamak için bir çalışma alanı seçin veya oluşturun</Text>
+              <LottieView
+                source={require('../../assets/animations/empty.json')}
+                autoPlay
+                loop
+                style={styles.lottieEmpty}
+              />
+              <Text style={styles.emptyTitle}>Calısma Alanı Seciniz</Text>
+              <Text style={styles.emptySubtitle}>Baslamak icin bir calısma alanı secin veya olusturun</Text>
               <TouchableOpacity
                 style={styles.emptyButton}
                 onPress={() => router.push('/profile')}
               >
                 <LinearGradient colors={theme.colors.gradients.primary} style={styles.emptyButtonGradient}>
-                  <Text style={styles.emptyButtonText}>Çalışma Alanı Seç</Text>
+                  <Text style={styles.emptyButtonText}>Calısma Alanı Sec</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -220,16 +376,20 @@ export default function Dashboard() {
     );
   }
 
+  // Loading State
   if (loading) {
     return (
       <View style={styles.container}>
         <LinearGradient colors={[theme.colors.background.primary, theme.colors.background.secondary]} style={styles.gradient}>
           <SafeAreaView style={styles.safeArea}>
             <View style={styles.loadingContainer}>
-              <View style={styles.loadingSpinner}>
-                <LinearGradient colors={theme.colors.gradients.primary} style={styles.loadingGradient} />
-              </View>
-              <Text style={styles.loadingText}>Yükleniyor...</Text>
+              <LottieView
+                source={require('../../assets/animations/loading.json')}
+                autoPlay
+                loop
+                style={styles.lottieLoading}
+              />
+              <Text style={styles.loadingText}>Yukleniyor...</Text>
             </View>
           </SafeAreaView>
         </LinearGradient>
@@ -248,11 +408,13 @@ export default function Dashboard() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.accent.primary} />
             }
           >
-            {/* Header Section */}
+            {/* Header */}
             <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
               <View style={styles.headerTop}>
                 <View style={styles.logoContainer}>
-                  <Text style={styles.logoText}>⚡</Text>
+                  <LinearGradient colors={theme.colors.gradients.primary} style={styles.logoGradient}>
+                    <Ionicons name="flash" size={20} color="#fff" />
+                  </LinearGradient>
                 </View>
                 <View style={styles.headerIcons}>
                   <TouchableOpacity
@@ -287,13 +449,13 @@ export default function Dashboard() {
 
               {/* Welcome Section */}
               <View style={styles.welcomeSection}>
-                <Text style={styles.welcomeText}>Hoş geldin</Text>
+                <Text style={styles.welcomeText}>Hos geldin</Text>
                 <Text style={styles.userName}>{user?.full_name?.split(' ')[0] || 'Kullanıcı'},</Text>
-                <Text style={styles.welcomeSubtext}>bugün işler nasıl gidiyor!</Text>
-                <Text style={styles.dateText}>Bugün {format(new Date(), "d MMMM yyyy", { locale: tr })}</Text>
+                <Text style={styles.welcomeSubtext}>bugun isler nasıl gidiyor!</Text>
+                <Text style={styles.dateText}>Bugun {format(new Date(), "d MMMM yyyy", { locale: tr })}</Text>
               </View>
 
-              {/* Quick Action Buttons */}
+              {/* Tab Buttons */}
               <View style={styles.quickActions}>
                 <TouchableOpacity
                   style={styles.primaryButton}
@@ -307,7 +469,7 @@ export default function Dashboard() {
                     style={[styles.primaryButtonGradient, activeTab !== 'overview' && styles.outlineButton]}
                   >
                     <Text style={[styles.primaryButtonText, activeTab !== 'overview' && styles.outlineButtonText]}>
-                      Bugünün Görevleri
+                      Bugunun Gorevleri
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -329,27 +491,18 @@ export default function Dashboard() {
 
             {activeTab === 'overview' ? (
               <>
-                {/* Progress Section */}
-                <Animated.View style={[styles.progressSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                {/* Progress Section with 3D Effect */}
+                <Card3D style={styles.progressSection} delay={100}>
                   <View style={styles.progressCard}>
                     <View style={styles.progressHeader}>
                       <Text style={styles.progressTitle}>Tamamlama Durumu</Text>
                       <TouchableOpacity onPress={() => router.push('/analytics')}>
-                        <Text style={styles.viewAllText}>Detaylar →</Text>
+                        <Text style={styles.viewAllText}>Detaylar</Text>
                       </TouchableOpacity>
                     </View>
 
                     <View style={styles.progressContent}>
-                      <View style={styles.progressCircleContainer}>
-                        <View style={styles.progressCircle}>
-                          <View style={styles.progressCircleInner}>
-                            <Text style={styles.progressPercentage}>{completionPercentage}%</Text>
-                          </View>
-                          <View style={[styles.progressArc, { transform: [{ rotate: `${completionPercentage * 3.6}deg` }] }]} />
-                        </View>
-                        {/* 3D Effect */}
-                        <View style={styles.progressCircleShadow} />
-                      </View>
+                      <ProgressRing progress={completionPercentage} size={100} />
 
                       <View style={styles.progressStats}>
                         <View style={styles.progressStatItem}>
@@ -375,58 +528,51 @@ export default function Dashboard() {
                         </View>
                       </View>
                     </View>
+                    {/* 3D Card Bottom Shadow */}
+                    <View style={styles.cardBottomShadow} />
                   </View>
-                </Animated.View>
+                </Card3D>
 
-                {/* Quick Stats Grid */}
-                <Animated.View style={[styles.statsGrid, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-                  <TouchableOpacity style={styles.statCard} onPress={() => router.push('/projects')}>
-                    <LinearGradient colors={['#3b82f6', '#2563eb']} style={styles.statCardGradient}>
-                      <View style={styles.statCardIcon}>
-                        <Ionicons name="folder-outline" size={24} color="#fff" />
-                      </View>
-                      <Text style={styles.statCardValue}>{stats?.total_projects || 0}</Text>
-                      <Text style={styles.statCardLabel}>Projeler</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
+                {/* Stats Grid with Animated Cards */}
+                <View style={styles.statsGrid}>
+                  <AnimatedStatCard
+                    icon="folder-outline"
+                    value={stats?.total_projects || 0}
+                    label="Projeler"
+                    gradient={['#3b82f6', '#2563eb']}
+                    onPress={() => router.push('/projects')}
+                    delay={200}
+                  />
+                  <AnimatedStatCard
+                    icon="checkmark-circle-outline"
+                    value={stats?.completed_tasks || 0}
+                    label="Tamamlanan"
+                    gradient={['#22c55e', '#16a34a']}
+                    delay={300}
+                  />
+                  <AnimatedStatCard
+                    icon="time-outline"
+                    value={stats?.in_progress_tasks || 0}
+                    label="Devam Eden"
+                    gradient={['#f59e0b', '#d97706']}
+                    delay={400}
+                  />
+                  <AnimatedStatCard
+                    icon="people-outline"
+                    value={stats?.total_members || 0}
+                    label="Uyeler"
+                    gradient={['#8b5cf6', '#7c3aed']}
+                    onPress={() => router.push('/team')}
+                    delay={500}
+                  />
+                </View>
 
-                  <TouchableOpacity style={styles.statCard}>
-                    <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.statCardGradient}>
-                      <View style={styles.statCardIcon}>
-                        <Ionicons name="checkmark-circle-outline" size={24} color="#fff" />
-                      </View>
-                      <Text style={styles.statCardValue}>{stats?.completed_tasks || 0}</Text>
-                      <Text style={styles.statCardLabel}>Tamamlanan</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.statCard}>
-                    <LinearGradient colors={['#f59e0b', '#d97706']} style={styles.statCardGradient}>
-                      <View style={styles.statCardIcon}>
-                        <Ionicons name="time-outline" size={24} color="#fff" />
-                      </View>
-                      <Text style={styles.statCardValue}>{stats?.in_progress_tasks || 0}</Text>
-                      <Text style={styles.statCardLabel}>Devam Eden</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.statCard} onPress={() => router.push('/team')}>
-                    <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.statCardGradient}>
-                      <View style={styles.statCardIcon}>
-                        <Ionicons name="people-outline" size={24} color="#fff" />
-                      </View>
-                      <Text style={styles.statCardValue}>{stats?.total_members || 0}</Text>
-                      <Text style={styles.statCardLabel}>Üyeler</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </Animated.View>
-
-                {/* Active Projects Section */}
-                <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                {/* Active Projects */}
+                <Card3D style={styles.section} delay={600}>
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Aktif Projeler</Text>
                     <TouchableOpacity onPress={() => router.push('/projects')}>
-                      <Text style={styles.viewAllText}>Tümü →</Text>
+                      <Text style={styles.viewAllText}>Tumu</Text>
                     </TouchableOpacity>
                   </View>
 
@@ -436,6 +582,7 @@ export default function Dashboard() {
                         key={project._id}
                         style={[styles.projectCard, { marginLeft: index === 0 ? 20 : 12 }]}
                         onPress={() => router.push(`/project-detail?id=${project._id}`)}
+                        activeOpacity={0.8}
                       >
                         <View style={[styles.projectColorBar, { backgroundColor: project.color || '#3b82f6' }]} />
                         <Text style={styles.projectName} numberOfLines={1}>{project.name}</Text>
@@ -453,9 +600,11 @@ export default function Dashboard() {
                         <View style={styles.projectMeta}>
                           <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
                           <Text style={styles.projectMetaText}>
-                            {project.task_stats?.completed || 0}/{project.task_stats?.total || 0} görev
+                            {project.task_stats?.completed || 0}/{project.task_stats?.total || 0} gorev
                           </Text>
                         </View>
+                        {/* Mini 3D effect */}
+                        <View style={styles.projectCard3DShadow} />
                       </TouchableOpacity>
                     ))}
                     {projects.filter(p => p.status === 'in_progress').length === 0 && (
@@ -465,23 +614,24 @@ export default function Dashboard() {
                       </View>
                     )}
                   </ScrollView>
-                </Animated.View>
+                </Card3D>
 
-                {/* Upcoming Tasks Section */}
-                <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                {/* Upcoming Tasks */}
+                <Card3D style={styles.section} delay={700}>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Yaklaşan Görevler</Text>
+                    <Text style={styles.sectionTitle}>Yaklasan Gorevler</Text>
                     <TouchableOpacity>
-                      <Text style={styles.viewAllText}>Tümü →</Text>
+                      <Text style={styles.viewAllText}>Tumu</Text>
                     </TouchableOpacity>
                   </View>
 
                   <View style={styles.tasksList}>
-                    {upcomingTasks.map((task, index) => (
+                    {upcomingTasks.map((task) => (
                       <TouchableOpacity
                         key={task._id}
                         style={styles.taskItem}
                         onPress={() => router.push(`/task-detail?id=${task._id}`)}
+                        activeOpacity={0.8}
                       >
                         <View style={[styles.taskPriorityBar, { backgroundColor: getPriorityColor(task.priority) }]} />
                         <View style={styles.taskContent}>
@@ -491,7 +641,7 @@ export default function Dashboard() {
                               <Text style={[styles.taskStatusText, { color: getStatusColor(task.status) }]}>
                                 {task.status === 'todo' ? 'Yapılacak' :
                                   task.status === 'in_progress' ? 'Devam' :
-                                    task.status === 'review' ? 'İnceleme' : 'Bitti'}
+                                    task.status === 'review' ? 'Inceleme' : 'Bitti'}
                               </Text>
                             </View>
                           </View>
@@ -517,17 +667,22 @@ export default function Dashboard() {
                     ))}
                     {upcomingTasks.length === 0 && (
                       <View style={styles.emptyTasksList}>
-                        <Ionicons name="checkbox-outline" size={40} color={theme.colors.text.muted} />
-                        <Text style={styles.emptyTasksText}>Bekleyen görev yok</Text>
+                        <LottieView
+                          source={require('../../assets/animations/success.json')}
+                          autoPlay
+                          loop={false}
+                          style={styles.lottieSuccess}
+                        />
+                        <Text style={styles.emptyTasksText}>Tum gorevler tamamlandı!</Text>
                       </View>
                     )}
                   </View>
-                </Animated.View>
+                </Card3D>
 
                 {/* Priority Distribution */}
-                <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                <Card3D style={styles.section} delay={800}>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Öncelik Dağılımı</Text>
+                    <Text style={styles.sectionTitle}>Oncelik Dagılımı</Text>
                   </View>
 
                   <View style={styles.priorityGrid}>
@@ -543,7 +698,7 @@ export default function Dashboard() {
                         <Ionicons name="arrow-up-circle" size={20} color="#f59e0b" />
                       </View>
                       <Text style={styles.priorityValue}>{stats?.tasks_by_priority?.high || 0}</Text>
-                      <Text style={styles.priorityLabel}>Yüksek</Text>
+                      <Text style={styles.priorityLabel}>Yuksek</Text>
                     </View>
                     <View style={styles.priorityItem}>
                       <View style={[styles.priorityIcon, { backgroundColor: '#3b82f620' }]}>
@@ -557,16 +712,15 @@ export default function Dashboard() {
                         <Ionicons name="arrow-down-circle" size={20} color="#22c55e" />
                       </View>
                       <Text style={styles.priorityValue}>{stats?.tasks_by_priority?.low || 0}</Text>
-                      <Text style={styles.priorityLabel}>Düşük</Text>
+                      <Text style={styles.priorityLabel}>Dusuk</Text>
                     </View>
                   </View>
-                </Animated.View>
+                </Card3D>
               </>
             ) : (
               <>
                 {/* Schedule View */}
-                <Animated.View style={[styles.scheduleSection, { opacity: fadeAnim }]}>
-                  {/* Calendar Header */}
+                <Card3D style={styles.scheduleSection} delay={100}>
                   <View style={styles.calendarHeader}>
                     <Text style={styles.calendarTitle}>
                       {format(selectedDate, 'd MMMM', { locale: tr })}
@@ -576,7 +730,6 @@ export default function Dashboard() {
                     </TouchableOpacity>
                   </View>
 
-                  {/* Week Days */}
                   <View style={styles.weekDays}>
                     {weekDays.map((day, index) => {
                       const isSelected = isSameDay(day, selectedDate);
@@ -608,10 +761,10 @@ export default function Dashboard() {
                       );
                     })}
                   </View>
-                </Animated.View>
+                </Card3D>
 
                 {/* Timeline */}
-                <View style={styles.timelineSection}>
+                <Card3D style={styles.timelineSection} delay={200}>
                   <View style={styles.timelineContainer}>
                     {HOURS.map((hour, hourIndex) => {
                       const hourTasks = todayTasks.filter((_, i) => i % 10 === hourIndex).slice(0, 1);
@@ -656,10 +809,10 @@ export default function Dashboard() {
                       );
                     })}
                   </View>
-                </View>
+                </Card3D>
 
                 {/* Today's Summary */}
-                <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+                <Card3D style={styles.section} delay={300}>
                   <View style={styles.todaySummary}>
                     <View style={styles.summaryItem}>
                       <View style={[styles.summaryIcon, { backgroundColor: '#3b82f620' }]}>
@@ -667,7 +820,7 @@ export default function Dashboard() {
                       </View>
                       <View style={styles.summaryInfo}>
                         <Text style={styles.summaryValue}>{todayTasks.length}</Text>
-                        <Text style={styles.summaryLabel}>Bugünün Görevleri</Text>
+                        <Text style={styles.summaryLabel}>Bugunun Gorevleri</Text>
                       </View>
                     </View>
                     <View style={styles.summaryDivider} />
@@ -683,11 +836,10 @@ export default function Dashboard() {
                       </View>
                     </View>
                   </View>
-                </Animated.View>
+                </Card3D>
               </>
             )}
 
-            {/* Bottom spacing for tab bar */}
             <View style={{ height: 120 }} />
           </ScrollView>
         </SafeAreaView>
@@ -711,7 +863,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Header Styles
+  // Header
   header: {
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -726,14 +878,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: theme.colors.background.card,
+    overflow: 'hidden',
+  },
+  logoGradient: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border.light,
-  },
-  logoText: {
-    fontSize: 20,
   },
   headerIcons: {
     flexDirection: 'row',
@@ -781,10 +932,10 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
+    color: '#fff',
   },
 
-  // Welcome Section
+  // Welcome
   welcomeSection: {
     marginBottom: 24,
   },
@@ -810,7 +961,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text.muted,
   },
 
-  // Quick Actions
+  // Buttons
   quickActions: {
     flexDirection: 'row',
     gap: 12,
@@ -833,7 +984,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text.primary,
+    color: '#fff',
   },
   outlineButtonText: {
     color: theme.colors.text.secondary,
@@ -858,7 +1009,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
   },
   secondaryButtonTextActive: {
-    color: theme.colors.text.primary,
+    color: '#fff',
   },
 
   // Progress Section
@@ -872,6 +1023,8 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: theme.colors.border.light,
+    position: 'relative',
+    overflow: 'hidden',
   },
   progressHeader: {
     flexDirection: 'row',
@@ -893,51 +1046,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  progressCircleContainer: {
-    width: 100,
-    height: 100,
+  cardBottomShadow: {
+    position: 'absolute',
+    bottom: -10,
+    left: 20,
+    right: 20,
+    height: 20,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 20,
+    transform: [{ scaleY: 0.3 }],
+  },
+
+  // Progress Ring
+  progressRingContainer: {
     marginRight: 24,
     position: 'relative',
-  },
-  progressCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: theme.colors.background.elevated,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 8,
-    borderColor: theme.colors.accent.primary,
   },
-  progressCircleInner: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  progressRingBg: {
+    position: 'absolute',
+    backgroundColor: theme.colors.background.elevated,
+    borderWidth: 8,
+    borderColor: theme.colors.background.elevated,
+  },
+  progressRingFg: {
+    position: 'absolute',
+  },
+  progressRingInner: {
     backgroundColor: theme.colors.background.card,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'absolute',
   },
-  progressPercentage: {
+  progressRingText: {
     fontSize: 22,
     fontWeight: '700',
     color: theme.colors.text.primary,
   },
-  progressArc: {
+  progressRing3DShadow: {
     position: 'absolute',
-    width: 100,
-    height: 100,
+    bottom: -8,
+    height: 15,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
     borderRadius: 50,
   },
-  progressCircleShadow: {
-    position: 'absolute',
-    bottom: -5,
-    left: 10,
-    width: 80,
-    height: 20,
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderRadius: 40,
-    transform: [{ scaleX: 1.2 }],
-  },
+
   progressStats: {
     flex: 1,
     gap: 16,
@@ -982,6 +1136,7 @@ const styles = StyleSheet.create({
   statCardGradient: {
     padding: 16,
     alignItems: 'flex-start',
+    position: 'relative',
   },
   statCardIcon: {
     width: 40,
@@ -1003,8 +1158,18 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     fontWeight: '500',
   },
+  card3DShadow: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 8,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
 
-  // Section Styles
+  // Section
   section: {
     marginBottom: 24,
   },
@@ -1021,7 +1186,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary,
   },
 
-  // Projects Scroll
+  // Projects
   projectsScroll: {
     paddingRight: 20,
   },
@@ -1032,6 +1197,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: theme.colors.border.light,
+    position: 'relative',
   },
   projectColorBar: {
     width: 40,
@@ -1076,6 +1242,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.text.muted,
   },
+  projectCard3DShadow: {
+    position: 'absolute',
+    bottom: -4,
+    left: 8,
+    right: 8,
+    height: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderRadius: 16,
+  },
   emptyProjectCard: {
     width: 200,
     backgroundColor: theme.colors.background.card,
@@ -1094,7 +1269,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
-  // Tasks List
+  // Tasks
   tasksList: {
     paddingHorizontal: 20,
   },
@@ -1175,7 +1350,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.colors.border.light,
-    borderStyle: 'dashed',
   },
   emptyTasksText: {
     fontSize: 14,
@@ -1183,7 +1357,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 
-  // Priority Grid
+  // Priority
   priorityGrid: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -1217,7 +1391,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text.muted,
   },
 
-  // Schedule Section
+  // Schedule
   scheduleSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -1290,10 +1464,10 @@ const styles = StyleSheet.create({
   dayNumberSelected: {
     fontSize: 15,
     fontWeight: '600',
-    color: theme.colors.text.primary,
+    color: '#fff',
   },
 
-  // Timeline Section
+  // Timeline
   timelineSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -1395,7 +1569,7 @@ const styles = StyleSheet.create({
     height: 8,
   },
 
-  // Today's Summary
+  // Summary
   todaySummary: {
     flexDirection: 'row',
     backgroundColor: theme.colors.background.card,
@@ -1435,26 +1609,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
 
-  // Loading & Empty States
+  // Loading & Empty
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingSpinner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  loadingGradient: {
-    width: '100%',
-    height: '100%',
+  lottieLoading: {
+    width: 120,
+    height: 120,
   },
   loadingText: {
     fontSize: 16,
     color: theme.colors.text.secondary,
+    marginTop: 16,
   },
   emptyContainer: {
     flex: 1,
@@ -1462,24 +1630,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
   },
-  emptyIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    overflow: 'hidden',
-    marginBottom: 24,
+  lottieEmpty: {
+    width: 150,
+    height: 150,
   },
-  emptyIconGradient: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+  lottieSuccess: {
+    width: 80,
+    height: 80,
   },
   emptyTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: theme.colors.text.primary,
     marginBottom: 12,
+    marginTop: 16,
     textAlign: 'center',
   },
   emptySubtitle: {
@@ -1500,6 +1664,6 @@ const styles = StyleSheet.create({
   emptyButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text.primary,
+    color: '#fff',
   },
 });
