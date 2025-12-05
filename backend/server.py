@@ -213,6 +213,16 @@ class TaskCreate(BaseModel):
     estimated_hours: Optional[float] = Field(None, ge=0, le=1000)
     parent_task_id: Optional[str] = None  # For subtasks
 
+class TaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=2, max_length=300)
+    description: Optional[str] = Field(None, max_length=5000)
+    status: Optional[str] = Field(None, pattern=r'^(todo|in_progress|review|done|cancelled)$')
+    priority: Optional[str] = Field(None, pattern=r'^(low|medium|high|critical)$')
+    assigned_to: Optional[str] = None
+    deadline: Optional[datetime] = None
+    tags: Optional[List[str]] = None
+    estimated_hours: Optional[float] = Field(None, ge=0, le=1000)
+
 class SubtaskCreate(BaseModel):
     title: str = Field(..., min_length=2, max_length=200)
     task_id: str
@@ -268,6 +278,40 @@ class NotificationCreate(BaseModel):
     type: str = Field("info", pattern=r'^(info|success|warning|error|mention|deadline|assignment)$')
     link: Optional[str] = None
     data: Optional[Dict[str, Any]] = None
+
+class PaginatedResponse(BaseModel):
+    """Generic paginated response model"""
+    items: List[Any]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    has_next: bool
+    has_prev: bool
+
+class PaginationParams:
+    """Pagination parameters helper"""
+    def __init__(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        max_page_size: int = 100
+    ):
+        self.page = max(1, page)
+        self.page_size = min(max(1, page_size), max_page_size)
+        self.skip = (self.page - 1) * self.page_size
+
+    def get_response(self, items: List[Any], total: int) -> dict:
+        total_pages = (total + self.page_size - 1) // self.page_size if total > 0 else 1
+        return {
+            "items": items,
+            "total": total,
+            "page": self.page,
+            "page_size": self.page_size,
+            "total_pages": total_pages,
+            "has_next": self.page < total_pages,
+            "has_prev": self.page > 1
+        }
 
 class TimeEntry(BaseModel):
     workspace_id: str
@@ -931,25 +975,68 @@ async def create_project(project: ProjectCreate, current_user: dict = Depends(ge
     return project_dict
 
 @api_router.get("/projects")
-async def get_projects(workspace_id: str, current_user: dict = Depends(get_current_user)):
+async def get_projects(
+    workspace_id: str,
+    status: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    paginated: bool = False,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get projects with optional pagination.
+
+    Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 20, max: 100)
+    - paginated: If True, returns paginated response with metadata
+    - status: Filter by project status
+    """
     workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
     if not workspace or current_user["_id"] not in workspace["member_ids"]:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    projects = await db.projects.find({"workspace_id": workspace_id}).sort("created_at", -1).to_list(1000)
+    query = {"workspace_id": workspace_id}
+    if status:
+        query["status"] = status
+
+    pagination = PaginationParams(page, page_size)
+
+    # Get total count
+    total = await db.projects.count_documents(query)
+
+    # Apply pagination
+    if paginated:
+        projects = await db.projects.find(query).sort("created_at", -1).skip(pagination.skip).limit(pagination.page_size).to_list(pagination.page_size)
+    else:
+        # Legacy mode
+        projects = await db.projects.find(query).sort("created_at", -1).to_list(1000)
 
     for p in projects:
         p["_id"] = str(p["_id"])
-        # Get task stats
-        tasks = await db.tasks.find({"project_id": p["_id"]}).to_list(1000)
-        total_tasks = len(tasks)
-        completed_tasks = len([t for t in tasks if t["status"] == "done"])
-        p["task_stats"] = {
-            "total": total_tasks,
-            "completed": completed_tasks,
-            "progress": int((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0)
-        }
+        # Get task stats efficiently using aggregation
+        pipeline = [
+            {"$match": {"project_id": p["_id"]}},
+            {"$group": {
+                "_id": None,
+                "total": {"$sum": 1},
+                "completed": {"$sum": {"$cond": [{"$eq": ["$status", "done"]}, 1, 0]}}
+            }}
+        ]
+        stats = await db.tasks.aggregate(pipeline).to_list(1)
+        if stats:
+            total_tasks = stats[0]["total"]
+            completed_tasks = stats[0]["completed"]
+            p["task_stats"] = {
+                "total": total_tasks,
+                "completed": completed_tasks,
+                "progress": int((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0)
+            }
+        else:
+            p["task_stats"] = {"total": 0, "completed": 0, "progress": 0}
 
+    if paginated:
+        return pagination.get_response(projects, total)
     return projects
 
 @api_router.get("/projects/{project_id}")
@@ -1101,9 +1188,21 @@ async def get_tasks(
     status: Optional[str] = None,
     priority: Optional[str] = None,
     assigned_to: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 50,
+    paginated: bool = False,
     current_user: dict = Depends(get_current_user)
 ):
+    """
+    Get tasks with optional pagination.
+
+    Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 50, max: 100)
+    - paginated: If True, returns paginated response with metadata
+    """
     query = {}
+    pagination = PaginationParams(page, page_size)
 
     # If workspace_id is provided, get all tasks from all projects in that workspace
     if workspace_id:
@@ -1124,7 +1223,15 @@ async def get_tasks(
     if assigned_to:
         query["assigned_to"] = assigned_to
 
-    tasks = await db.tasks.find(query).sort("created_at", -1).to_list(1000)
+    # Get total count for pagination
+    total = await db.tasks.count_documents(query)
+
+    # Apply pagination
+    if paginated:
+        tasks = await db.tasks.find(query).sort("created_at", -1).skip(pagination.skip).limit(pagination.page_size).to_list(pagination.page_size)
+    else:
+        # Legacy mode - return all tasks up to 1000
+        tasks = await db.tasks.find(query).sort("created_at", -1).to_list(1000)
 
     for t in tasks:
         t["_id"] = str(t["_id"])
@@ -1140,6 +1247,8 @@ async def get_tasks(
                 t["project_name"] = project.get("name", "")
                 t["project_color"] = project.get("color", "#3b82f6")
 
+    if paginated:
+        return pagination.get_response(tasks, total)
     return tasks
 
 @api_router.get("/tasks/{task_id}")
@@ -1168,33 +1277,62 @@ async def get_task(task_id: str, current_user: dict = Depends(get_current_user))
         f["_id"] = str(f["_id"])
     task["files"] = files
 
+    # Get assigned user info
+    if task.get("assigned_to"):
+        assigned_user = await db.users.find_one({"_id": ObjectId(task["assigned_to"])})
+        if assigned_user:
+            task["assigned_user"] = {
+                "_id": str(assigned_user["_id"]),
+                "full_name": assigned_user.get("full_name", ""),
+                "email": assigned_user.get("email", ""),
+                "avatar": assigned_user.get("avatar", "")
+            }
+
+    # Get project info
+    if task.get("project_id"):
+        project = await db.projects.find_one({"_id": ObjectId(task["project_id"])})
+        if project:
+            task["project_name"] = project.get("name", "")
+            task["project_color"] = project.get("color", "#3b82f6")
+
     return task
 
 @api_router.put("/tasks/{task_id}")
-async def update_task(task_id: str, task: TaskCreate, current_user: dict = Depends(get_current_user)):
+async def update_task(task_id: str, task: TaskUpdate, current_user: dict = Depends(get_current_user)):
     existing = await db.tasks.find_one({"_id": ObjectId(task_id)})
     if not existing:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    update_dict = {
-        "title": task.title,
-        "description": task.description,
-        "status": task.status,
-        "priority": task.priority,
-        "assigned_to": task.assigned_to,
-        "deadline": task.deadline,
-        "tags": task.tags,
-        "estimated_hours": task.estimated_hours,
-        "updated_at": datetime.utcnow()
-    }
+    # Build update dict with only provided fields
+    update_dict = {"updated_at": datetime.utcnow()}
+
+    if task.title is not None:
+        update_dict["title"] = task.title
+    if task.description is not None:
+        update_dict["description"] = task.description
+    if task.status is not None:
+        update_dict["status"] = task.status
+    if task.priority is not None:
+        update_dict["priority"] = task.priority
+    if task.assigned_to is not None:
+        update_dict["assigned_to"] = task.assigned_to
+    if task.deadline is not None:
+        update_dict["deadline"] = task.deadline
+    if task.tags is not None:
+        update_dict["tags"] = task.tags
+    if task.estimated_hours is not None:
+        update_dict["estimated_hours"] = task.estimated_hours
 
     await db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": update_dict})
 
     project = await db.projects.find_one({"_id": ObjectId(existing["project_id"])})
 
+    # Use provided title or existing title for activity log
+    task_title = task.title if task.title else existing.get("title", "")
+
     await log_activity(
         current_user["_id"], "updated", "task",
-        task_id, task.title, project["workspace_id"] if project else ""
+        task_id, task_title, project["workspace_id"] if project else ""
     )
 
     # Notify if assigned to someone new
@@ -1202,7 +1340,7 @@ async def update_task(task_id: str, task: TaskCreate, current_user: dict = Depen
         await send_notification(
             task.assigned_to,
             "Görev Ataması",
-            f"'{task.title}' görevi size atandı.",
+            f"'{task_title}' görevi size atandı.",
             "assignment"
         )
 

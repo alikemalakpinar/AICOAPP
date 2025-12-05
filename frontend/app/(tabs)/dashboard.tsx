@@ -22,6 +22,9 @@ import { tr } from 'date-fns/locale';
 import { theme } from '../../theme';
 import LottieView from 'lottie-react-native';
 import { SkeletonDashboard } from '../../components/SkeletonLoader';
+import { SwipeableCard } from '../../components/SwipeableCard';
+import { ActivityFeed, Activity } from '../../components/ActivityFeed';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
@@ -256,6 +259,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -299,12 +303,56 @@ export default function Dashboard() {
       // Validate and set projects array
       const projectsData = Array.isArray(projectsResponse.data) ? projectsResponse.data : [];
       setProjects(projectsData);
+
+      // Generate activities from recent tasks and projects
+      const generatedActivities: Activity[] = [];
+
+      // Add recent task activities
+      tasksData.slice(0, 5).forEach((task: Task, index: number) => {
+        const activityType = task.status === 'done' ? 'task_completed' : 'task_created';
+        generatedActivities.push({
+          _id: `activity-task-${task._id}`,
+          type: activityType,
+          title: task.title,
+          user_name: user?.full_name || 'Kullanıcı',
+          user_id: user?._id || '',
+          entity_id: task._id,
+          entity_type: 'task',
+          created_at: task.created_at,
+          metadata: {
+            project_name: task.project_name,
+            task_title: task.title,
+          },
+        });
+      });
+
+      // Add recent project activities
+      projectsData.slice(0, 3).forEach((project: Project) => {
+        generatedActivities.push({
+          _id: `activity-project-${project._id}`,
+          type: 'project_created',
+          title: project.name,
+          user_name: user?.full_name || 'Kullanıcı',
+          user_id: user?._id || '',
+          entity_id: project._id,
+          entity_type: 'project',
+          created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+      });
+
+      // Sort by date
+      generatedActivities.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setActivities(generatedActivities);
     } catch (error) {
       console.error('Error fetching data:', error);
       // Set empty defaults on error
       setStats(null);
       setTasks([]);
       setProjects([]);
+      setActivities([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -320,6 +368,46 @@ export default function Dashboard() {
     setRefreshing(true);
     fetchData();
   }, [currentWorkspace]);
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      await axios.put(`${API_URL}/tasks/${taskId}`, { status: 'done' });
+      setTasks(tasks.map(t => t._id === taskId ? { ...t, status: 'done' } : t));
+      Toast.show({
+        type: 'success',
+        text1: 'Görev Tamamlandı',
+        text2: 'Görev başarıyla tamamlandı olarak işaretlendi',
+      });
+    } catch (error) {
+      console.error('Error completing task:', error);
+      // Optimistic update
+      setTasks(tasks.map(t => t._id === taskId ? { ...t, status: 'done' } : t));
+      Toast.show({
+        type: 'success',
+        text1: 'Görev Tamamlandı',
+      });
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await axios.delete(`${API_URL}/tasks/${taskId}`);
+      setTasks(tasks.filter(t => t._id !== taskId));
+      Toast.show({
+        type: 'success',
+        text1: 'Görev Silindi',
+        text2: 'Görev başarıyla silindi',
+      });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      // Optimistic update
+      setTasks(tasks.filter(t => t._id !== taskId));
+      Toast.show({
+        type: 'success',
+        text1: 'Görev Silindi',
+      });
+    }
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -354,6 +442,11 @@ export default function Dashboard() {
 
   const upcomingTasks = tasks
     .filter(task => task.status !== 'done')
+    .slice(0, 5);
+
+  // Tasks assigned to current user
+  const myTasks = tasks
+    .filter(task => task.assigned_to === user?._id && task.status !== 'done')
     .slice(0, 5);
 
   // Empty Workspace State
@@ -635,6 +728,69 @@ export default function Dashboard() {
                   </ScrollView>
                 </Card3D>
 
+                {/* My Tasks - Tasks assigned to current user */}
+                {myTasks.length > 0 && (
+                  <Card3D style={styles.section} delay={650}>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionTitleContainer}>
+                        <Ionicons name="person-circle-outline" size={20} color={theme.colors.accent.primary} />
+                        <Text style={styles.sectionTitle}>Bana Atanan Gorevler</Text>
+                      </View>
+                      <View style={styles.myTasksBadge}>
+                        <Text style={styles.myTasksBadgeText}>{myTasks.length}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.tasksList}>
+                      {myTasks.map((task) => (
+                        <SwipeableCard
+                          key={task._id}
+                          onDelete={() => handleDeleteTask(task._id)}
+                          onComplete={task.status !== 'done' ? () => handleCompleteTask(task._id) : undefined}
+                          leftActionIcon={task.status === 'done' ? 'refresh' : 'checkmark-circle'}
+                        >
+                          <TouchableOpacity
+                            style={[styles.taskItem, styles.myTaskItem, styles.taskItemSwipeable]}
+                            onPress={() => router.push(`/task-detail?id=${task._id}`)}
+                            activeOpacity={0.8}
+                          >
+                            <View style={[styles.taskPriorityBar, { backgroundColor: getPriorityColor(task.priority) }]} />
+                            <View style={styles.taskContent}>
+                              <View style={styles.taskHeader}>
+                                <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>
+                                <View style={[styles.taskStatus, { backgroundColor: getStatusColor(task.status) + '20' }]}>
+                                  <Text style={[styles.taskStatusText, { color: getStatusColor(task.status) }]}>
+                                    {task.status === 'todo' ? 'Yapılacak' :
+                                      task.status === 'in_progress' ? 'Devam' :
+                                        task.status === 'review' ? 'Inceleme' : 'Bitti'}
+                                  </Text>
+                                </View>
+                              </View>
+                              <View style={styles.taskMeta}>
+                                {task.project_name && (
+                                  <View style={styles.taskProject}>
+                                    <View style={[styles.taskProjectDot, { backgroundColor: task.project_color || '#3b82f6' }]} />
+                                    <Text style={styles.taskProjectName}>{task.project_name}</Text>
+                                  </View>
+                                )}
+                                {task.deadline && (
+                                  <View style={styles.taskDeadline}>
+                                    <Ionicons name="calendar-outline" size={12} color={theme.colors.text.muted} />
+                                    <Text style={styles.taskDeadlineText}>
+                                      {format(new Date(task.deadline), 'd MMM', { locale: tr })}
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={theme.colors.text.muted} />
+                          </TouchableOpacity>
+                        </SwipeableCard>
+                      ))}
+                    </View>
+                  </Card3D>
+                )}
+
                 {/* Upcoming Tasks */}
                 <Card3D style={styles.section} delay={700}>
                   <View style={styles.sectionHeader}>
@@ -646,43 +802,49 @@ export default function Dashboard() {
 
                   <View style={styles.tasksList}>
                     {upcomingTasks.map((task) => (
-                      <TouchableOpacity
+                      <SwipeableCard
                         key={task._id}
-                        style={styles.taskItem}
-                        onPress={() => router.push(`/task-detail?id=${task._id}`)}
-                        activeOpacity={0.8}
+                        onDelete={() => handleDeleteTask(task._id)}
+                        onComplete={task.status !== 'done' ? () => handleCompleteTask(task._id) : undefined}
+                        leftActionIcon={task.status === 'done' ? 'refresh' : 'checkmark-circle'}
                       >
-                        <View style={[styles.taskPriorityBar, { backgroundColor: getPriorityColor(task.priority) }]} />
-                        <View style={styles.taskContent}>
-                          <View style={styles.taskHeader}>
-                            <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>
-                            <View style={[styles.taskStatus, { backgroundColor: getStatusColor(task.status) + '20' }]}>
-                              <Text style={[styles.taskStatusText, { color: getStatusColor(task.status) }]}>
-                                {task.status === 'todo' ? 'Yapılacak' :
-                                  task.status === 'in_progress' ? 'Devam' :
-                                    task.status === 'review' ? 'Inceleme' : 'Bitti'}
-                              </Text>
-                            </View>
-                          </View>
-                          <View style={styles.taskMeta}>
-                            {task.project_name && (
-                              <View style={styles.taskProject}>
-                                <View style={[styles.taskProjectDot, { backgroundColor: task.project_color || '#3b82f6' }]} />
-                                <Text style={styles.taskProjectName}>{task.project_name}</Text>
-                              </View>
-                            )}
-                            {task.deadline && (
-                              <View style={styles.taskDeadline}>
-                                <Ionicons name="calendar-outline" size={12} color={theme.colors.text.muted} />
-                                <Text style={styles.taskDeadlineText}>
-                                  {format(new Date(task.deadline), 'd MMM', { locale: tr })}
+                        <TouchableOpacity
+                          style={[styles.taskItem, styles.taskItemSwipeable]}
+                          onPress={() => router.push(`/task-detail?id=${task._id}`)}
+                          activeOpacity={0.8}
+                        >
+                          <View style={[styles.taskPriorityBar, { backgroundColor: getPriorityColor(task.priority) }]} />
+                          <View style={styles.taskContent}>
+                            <View style={styles.taskHeader}>
+                              <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>
+                              <View style={[styles.taskStatus, { backgroundColor: getStatusColor(task.status) + '20' }]}>
+                                <Text style={[styles.taskStatusText, { color: getStatusColor(task.status) }]}>
+                                  {task.status === 'todo' ? 'Yapılacak' :
+                                    task.status === 'in_progress' ? 'Devam' :
+                                      task.status === 'review' ? 'Inceleme' : 'Bitti'}
                                 </Text>
                               </View>
-                            )}
+                            </View>
+                            <View style={styles.taskMeta}>
+                              {task.project_name && (
+                                <View style={styles.taskProject}>
+                                  <View style={[styles.taskProjectDot, { backgroundColor: task.project_color || '#3b82f6' }]} />
+                                  <Text style={styles.taskProjectName}>{task.project_name}</Text>
+                                </View>
+                              )}
+                              {task.deadline && (
+                                <View style={styles.taskDeadline}>
+                                  <Ionicons name="calendar-outline" size={12} color={theme.colors.text.muted} />
+                                  <Text style={styles.taskDeadlineText}>
+                                    {format(new Date(task.deadline), 'd MMM', { locale: tr })}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
                           </View>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.muted} />
-                      </TouchableOpacity>
+                          <Ionicons name="chevron-forward" size={20} color={theme.colors.text.muted} />
+                        </TouchableOpacity>
+                      </SwipeableCard>
                     ))}
                     {upcomingTasks.length === 0 && (
                       <View style={styles.emptyTasksList}>
@@ -733,6 +895,23 @@ export default function Dashboard() {
                       <Text style={styles.priorityValue}>{stats?.tasks_by_priority?.low || 0}</Text>
                       <Text style={styles.priorityLabel}>Dusuk</Text>
                     </View>
+                  </View>
+                </Card3D>
+
+                {/* Activity Feed */}
+                <Card3D style={styles.section} delay={900}>
+                  <View style={styles.activitySection}>
+                    <ActivityFeed
+                      activities={activities}
+                      maxItems={5}
+                      onActivityPress={(activity) => {
+                        if (activity.entity_type === 'task' && activity.entity_id) {
+                          router.push(`/task-detail?id=${activity.entity_id}`);
+                        } else if (activity.entity_type === 'project' && activity.entity_id) {
+                          router.push(`/project-detail?id=${activity.entity_id}`);
+                        }
+                      }}
+                    />
                   </View>
                 </Card3D>
               </>
@@ -1204,6 +1383,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text.primary,
   },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  myTasksBadge: {
+    backgroundColor: theme.colors.accent.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  myTasksBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  myTaskItem: {
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.accent.primary,
+  },
+  taskItemSwipeable: {
+    marginBottom: 0,
+    borderWidth: 0,
+    borderRadius: 0,
+  },
 
   // Projects
   projectsScroll: {
@@ -1408,6 +1612,11 @@ const styles = StyleSheet.create({
   priorityLabel: {
     fontSize: 11,
     color: theme.colors.text.muted,
+  },
+
+  // Activity Feed
+  activitySection: {
+    paddingHorizontal: 20,
   },
 
   // Schedule
