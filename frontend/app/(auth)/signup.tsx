@@ -61,9 +61,27 @@ export default function Signup() {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır');
+      Alert.alert('Hata', 'Şifre en az 8 karakter olmalıdır');
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Hata', 'Şifre en az bir büyük harf içermelidir');
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Hata', 'Şifre en az bir küçük harf içermelidir');
+      return;
+    }
+
+    if (!/\d/.test(password)) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Hata', 'Şifre en az bir rakam içermelidir');
       return;
     }
 
@@ -188,7 +206,7 @@ export default function Signup() {
                 <Ionicons name="lock-closed-outline" size={20} color={theme.colors.text.muted} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Şifre (min 6 karakter)"
+                  placeholder="Şifre (min 8 karakter)"
                   placeholderTextColor={theme.colors.text.muted}
                   value={password}
                   onChangeText={setPassword}
@@ -207,15 +225,54 @@ export default function Signup() {
               <View style={styles.requirementsContainer}>
                 <View style={styles.requirementItem}>
                   <Ionicons
-                    name={password.length >= 6 ? "checkmark-circle" : "ellipse-outline"}
+                    name={password.length >= 8 ? "checkmark-circle" : "ellipse-outline"}
                     size={16}
-                    color={password.length >= 6 ? theme.colors.accent.success : theme.colors.text.muted}
+                    color={password.length >= 8 ? theme.colors.accent.success : theme.colors.text.muted}
                   />
                   <Text style={[
                     styles.requirementText,
-                    password.length >= 6 && styles.requirementTextMet
+                    password.length >= 8 && styles.requirementTextMet
                   ]}>
-                    En az 6 karakter
+                    En az 8 karakter
+                  </Text>
+                </View>
+                <View style={styles.requirementItem}>
+                  <Ionicons
+                    name={/[A-Z]/.test(password) ? "checkmark-circle" : "ellipse-outline"}
+                    size={16}
+                    color={/[A-Z]/.test(password) ? theme.colors.accent.success : theme.colors.text.muted}
+                  />
+                  <Text style={[
+                    styles.requirementText,
+                    /[A-Z]/.test(password) && styles.requirementTextMet
+                  ]}>
+                    En az bir büyük harf (A-Z)
+                  </Text>
+                </View>
+                <View style={styles.requirementItem}>
+                  <Ionicons
+                    name={/[a-z]/.test(password) ? "checkmark-circle" : "ellipse-outline"}
+                    size={16}
+                    color={/[a-z]/.test(password) ? theme.colors.accent.success : theme.colors.text.muted}
+                  />
+                  <Text style={[
+                    styles.requirementText,
+                    /[a-z]/.test(password) && styles.requirementTextMet
+                  ]}>
+                    En az bir küçük harf (a-z)
+                  </Text>
+                </View>
+                <View style={styles.requirementItem}>
+                  <Ionicons
+                    name={/\d/.test(password) ? "checkmark-circle" : "ellipse-outline"}
+                    size={16}
+                    color={/\d/.test(password) ? theme.colors.accent.success : theme.colors.text.muted}
+                  />
+                  <Text style={[
+                    styles.requirementText,
+                    /\d/.test(password) && styles.requirementTextMet
+                  ]}>
+                    En az bir rakam (0-9)
                   </Text>
                 </View>
               </View>
@@ -367,6 +424,7 @@ const styles = StyleSheet.create({
   },
   requirementsContainer: {
     marginBottom: 20,
+    gap: 6,
   },
   requirementItem: {
     flexDirection: 'row',

@@ -72,7 +72,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Login failed');
+    const detail = error.response?.data?.detail;
+    if (Array.isArray(detail)) {
+      throw new Error(detail.map((d: any) => d.msg).join(', '));
+    }
+    throw new Error(detail || 'Giriş başarısız');
   }
 };
 
@@ -98,7 +102,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Signup failed');
+    const detail = error.response?.data?.detail;
+    if (Array.isArray(detail)) {
+      throw new Error(detail.map((d: any) => d.msg).join(', '));
+    }
+    throw new Error(detail || 'Kayıt başarısız');
   }
 };
 
